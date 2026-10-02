@@ -3,20 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Canada Basketball Tournaments</title>
+<title>Canada Basketball Women's Dashboards</title>
+<meta name="description" content="Analytics dashboards for Canada Basketball's women's programme: FIBA tournaments and the SSA 3x3 Women's Series.">
+<link rel="icon" href="./assets/canada-basketball-logo.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f5f6f8;
-    --surface: #ffffff;
-    --border: #e8eaef;
-    --border2: #d3d8e0;
-    --text: #0f172a;
-    --muted: #6b7280;
-    --muted2: #9ca3af;
+    --card: #ffffff;
+    --text: #12161c;
+    --muted: #5b6573;
+    --border: #e4e8ee;
     --accent: #D80621;
+    --madlove: #a72232;
+    --madlove-dark: #861a28;
   }
   * { box-sizing: border-box; }
   body {
@@ -24,256 +26,232 @@
     background: var(--bg);
     color: var(--text);
     font-family: 'Inter', system-ui, sans-serif;
-    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
-  .header {
+  main { flex: 1; width: 100%; }
+
+  /* ── Header ── */
+  .hero {
     background: var(--accent);
-    padding: 28px 24px;
     color: #fff;
+    text-align: center;
+    padding: 32px 16px 72px;
   }
-  .header-inner {
-    max-width: 960px;
-    margin: 0 auto;
+  .topbar {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    text-align: center;
-  }
-  .header-inner img {
-    height: 72px;
-    width: auto;
-    flex-shrink: 0;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,.2));
-  }
-  .header h1 {
-    margin: 0 0 6px;
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-  .header p {
-    margin: 0;
-    font-size: 14px;
-    opacity: 0.9;
-  }
-  main {
-    max-width: 1240px;
-    margin: 0 auto;
-    padding: 28px 20px 60px;
-  }
-  /* One row per year: Canada plays about four tournaments a year, so four
-     across keeps a year on a single line. */
-  .year + .year { margin-top: 30px; }
-  .year-label {
-    margin: 0 0 12px;
-    font-size: 13px;
-    font-weight: 800;
-    letter-spacing: .12em;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
     gap: 12px;
   }
-  .year-label::after { content: ""; flex: 1; height: 1px; background: var(--border2); }
+  .topbar img {
+    height: 72px;
+    width: 72px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 50%;
+    padding: 10px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  }
+  .hero h1 {
+    margin: 18px 0 10px;
+    font-size: clamp(26px, 4.4vw, 42px);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .hero p {
+    margin: 0 auto;
+    max-width: 560px;
+    font-size: 16px;
+    line-height: 1.5;
+    opacity: .92;
+  }
+
+  /* ── Dashboard cards ── */
+  main {
+    max-width: 960px;
+    margin: -36px auto 0;
+    padding: 0 16px 56px;
+    position: relative;
+  }
   .grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
   }
-  @media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 560px)  { .grid { grid-template-columns: 1fr; } }
-  .banner-fallback {
-    width: 100%; height: 100%; display: grid; place-items: center;
-    background: linear-gradient(135deg, var(--accent), #8f1420); font-size: 40px;
-  }
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
   .card {
-    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
     text-decoration: none;
     color: inherit;
-    box-shadow: 0 1px 3px rgba(0,0,0,.05);
-    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    box-shadow: 0 6px 20px rgba(18, 22, 28, .08);
+    transition: transform .15s ease, box-shadow .15s ease;
   }
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 22px rgba(0,0,0,.1);
-    border-color: var(--border2);
-  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(18, 22, 28, .14); }
+  .card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
   .banner {
     position: relative;
     aspect-ratio: 1230 / 630;
+    background: linear-gradient(135deg, var(--accent), #8f1420);
     overflow: hidden;
-    background: #0f172a;
   }
-  .banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .badge {
+  .banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .banner .scribbles {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    padding: 3px 9px;
-    border-radius: 999px;
-    background: rgba(0,0,0,.35);
+    inset: 0;
+    background: url("./home/madlove-scribbles.png") center / cover no-repeat;
+    opacity: .3;
+  }
+  .banner .big {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #fff;
-    border: 1px solid rgba(255,255,255,.35);
-    backdrop-filter: blur(2px);
+    font-size: clamp(44px, 9vw, 72px);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    text-shadow: 0 3px 12px rgba(0,0,0,.25);
   }
-  .body {
-    padding: 14px 16px 16px;
-  }
-  .full-name {
-    margin: 0 0 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .meta {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .cta {
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-    font-size: 12.5px;
-    font-weight: 700;
+  .tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(255,255,255,.95);
     color: var(--accent);
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 5px 9px;
+    border-radius: 999px;
+  }
+  .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .body h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+  .body p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; flex: 1; }
+  .cta { margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--accent); }
+
+  /* ── Mad Love band: scribbles behind, wordmark written when scrolled into view ── */
+  .madlove-band {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--madlove) 0%, var(--madlove-dark) 100%);
+    color: #fff;
+    text-align: center;
+    padding: 48px 16px 40px;
+  }
+  .madlove-band::before {
+    content: "";
+    position: absolute;
+    inset: -4%;
+    background: url("./home/madlove-scribbles.png") center / cover no-repeat;
+    opacity: .38;
+    pointer-events: none;
+  }
+  .madlove-band > * { position: relative; }
+  .madlove {
+    width: min(460px, 86vw);
+    aspect-ratio: 888 / 324;
+    margin: 0 auto;
+  }
+  .madlove-band p {
+    margin: 14px auto 0;
+    max-width: 520px;
+    font-size: 15px;
+    line-height: 1.5;
+    opacity: .92;
+  }
+  footer {
+    text-align: center;
+    color: rgba(255,255,255,.8);
+    font-size: 12.5px;
+    margin-top: 28px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .card:hover { transform: none; }
   }
 </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-inner">
+  <header class="hero">
+    <div class="topbar">
       <img src="./assets/canada-basketball-logo.webp" alt="Canada Basketball">
-      <div>
-        <h1>Canada Basketball Tournaments</h1>
-      </div>
     </div>
-  </div>
+    <h1>Canada Basketball Women's Dashboards</h1>
+    <p>Analytics for Canada's women's programme — national team tournaments and the 3x3 circuit, updated automatically.</p>
+  </header>
+
   <main>
-    <section class="year">
-      <h2 class="year-label">3x3</h2>
-      <div class="grid">
+    <div class="grid">
+      <a class="card" href="./tournaments/">
+        <div class="banner">
+          <img src="./assets/banners/americup-2025.webp" alt="" loading="lazy">
+          <span class="tag">5x5</span>
+        </div>
+        <div class="body">
+          <h2>Tournaments</h2>
+          <p>Box scores, standings, Four Factors and player rankings for every FIBA women's tournament Canada plays.</p>
+          <div class="cta">View tournaments &rarr;</div>
+        </div>
+      </a>
 
       <a class="card" href="./ssa-3x3/">
         <div class="banner">
-          <div class="banner-fallback">🍁</div>
-          <span class="badge">2026–27</span>
+          <div class="scribbles"></div>
+          <div class="big">3x3</div>
+          <span class="tag">2026–27</span>
         </div>
         <div class="body">
-          <p class="full-name">SSA 3x3 Women's Series</p>
-          <div class="meta">National teams &amp; clubs &nbsp;·&nbsp; Strong Side Analytics</div>
-          <div class="cta">View dashboard &rarr;</div>
+          <h2>SSA 3x3 Women's Series</h2>
+          <p>National teams and clubs on the 3x3 circuit — team, player, play-type and per-game stats from Strong Side Analytics.</p>
+          <div class="cta">View 3x3 dashboard &rarr;</div>
         </div>
       </a>
-      </div>
-    </section>
-    <section class="year">
-      <h2 class="year-label">2026</h2>
-      <div class="grid">
-
-      <a class="card" href="./wc-qualifying-istanbul-2026/">
-        <div class="banner">
-          <img src="./assets/banners/wc-qualifying-istanbul-2026.webp" alt="FIBA Women's Basketball World Cup 2026 Qualifying Tournament — Istanbul" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA Women's Basketball World Cup 2026 Qualifying Tournament — Istanbul</p>
-          <div class="meta">Istanbul, Türkiye &nbsp;·&nbsp; 11–17 Mar 2026</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-
-      <a class="card" href="./u18-americup-2026/">
-        <div class="banner">
-          <img src="./assets/banners/u18-americup-2026.webp" alt="FIBA U18 Women's AmeriCup 2026" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA U18 Women's AmeriCup 2026</p>
-          <div class="meta">Irapuato, Mexico &nbsp;·&nbsp; 9–15 Jun 2026</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-
-      <a class="card" href="./u17-world-cup-2026/">
-        <div class="banner">
-          <img src="./assets/banners/u17-world-cup-2026.webp" alt="FIBA U17 Women's Basketball World Cup 2026" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA U17 Women's Basketball World Cup 2026</p>
-          <div class="meta">Brno, Czechia &nbsp;·&nbsp; 11–19 Jul 2026</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-
-      <a class="card" href="./olympic-pre-qualifying-2026/">
-        <div class="banner">
-          <img src="./assets/banners/olympic-pre-qualifying-2026.webp" alt="FIBA Women's Olympic Pre-Qualifying Tournament 2026" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA Women's Olympic Pre-Qualifying Tournament 2026</p>
-          <div class="meta">Guadalajara, Mexico &nbsp;·&nbsp; 17–23 Aug 2026</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-      </div>
-    </section>
-    <section class="year">
-      <h2 class="year-label">2025</h2>
-      <div class="grid">
-
-      <a class="card" href="./u16-americup-2025/">
-        <div class="banner">
-          <img src="./assets/banners/u16-americup-2025.webp" alt="FIBA U16 Women's AmeriCup 2025" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA U16 Women's AmeriCup 2025</p>
-          <div class="meta">Irapuato, Mexico &nbsp;·&nbsp; 16–22 Jun 2025</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-
-      <a class="card" href="./americup-2025/">
-        <div class="banner">
-          <img src="./assets/banners/americup-2025.webp" alt="FIBA Women's AmeriCup 2025" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA Women's AmeriCup 2025</p>
-          <div class="meta">Santiago, Chile &nbsp;·&nbsp; 28 Jun – 6 Jul 2025</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-
-      <a class="card" href="./u19-world-cup-2025/">
-        <div class="banner">
-          <img src="./assets/banners/u19-world-cup-2025.webp" alt="FIBA U19 Women's Basketball World Cup 2025" loading="lazy">
-          <span class="badge">Final</span>
-        </div>
-        <div class="body">
-          <p class="full-name">FIBA U19 Women's Basketball World Cup 2025</p>
-          <div class="meta">Brno, Czechia &nbsp;·&nbsp; 12–20 Jul 2025</div>
-          <div class="cta">View dashboard &rarr;</div>
-        </div>
-      </a>
-      </div>
-    </section>
+    </div>
   </main>
+
+  <section class="madlove-band">
+    <div class="madlove" id="madlove" role="img" aria-label="Mad Love"></div>
+    <p>If you can't stop her, you won't stop Mad Love.</p>
+    <footer>Canada Basketball &nbsp;·&nbsp; Women's programme analytics</footer>
+  </section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+<script>
+  // Writes the MADLOVE wordmark once it scrolls into view. The animation is
+  // frame-by-frame and its very last frame is empty, so it rests a fraction
+  // before the end, on the finished word. Reduced motion shows that frame only.
+  (function () {
+    var el = document.getElementById('madlove');
+    if (!window.lottie || !el) return;
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var anim = lottie.loadAnimation({
+      container: el,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      path: './home/madlove-lottie.json'
+    });
+    function showWord() { anim.goToAndStop(anim.totalFrames - 0.3, true); }
+    anim.addEventListener('complete', showWord);
+    anim.addEventListener('DOMLoaded', function () {
+      if (still || !('IntersectionObserver' in window)) { showWord(); return; }
+      new IntersectionObserver(function (entries, obs) {
+        if (entries[0].isIntersecting) { anim.play(); obs.disconnect(); }
+      }, { threshold: 0.6 }).observe(el);
+    });
+  })();
+</script>
 </body>
 </html>
