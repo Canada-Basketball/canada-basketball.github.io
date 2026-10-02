@@ -51,13 +51,11 @@
     padding: 36px 16px 28px;
   }
   header img {
-    height: 72px;
-    width: 72px;
-    object-fit: contain;
-    background: #fff;
-    border-radius: 50%;
-    padding: 10px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    height: 150px;
+    width: auto;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,.25));
   }
   header h1 {
     margin: 18px 0 10px;
@@ -188,7 +186,7 @@
 </head>
 <body>
   <header>
-    <img src="./assets/canada-basketball-logo.webp" alt="Canada Basketball">
+    <img src="./home/crest-white.png" alt="Canada Basketball">
     <h1>Canada Basketball Women's High Performance Dashboards</h1>
   </header>
 
@@ -233,9 +231,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 <script>
-  // Writes the MADLOVE wordmark once it scrolls into view. The animation is
-  // frame-by-frame and its very last frame is empty, so it rests a fraction
-  // before the end, on the finished word. Reduced motion shows that frame only.
+  // Writes the MADLOVE wordmark once it scrolls into view, holds the finished
+  // word, then writes it again. The animation is frame-by-frame and its very
+  // last frame is empty, so it rests a fraction before the end, on the
+  // finished word. Reduced motion shows that frame only.
   (function () {
     var el = document.getElementById('madlove');
     if (!window.lottie || !el) return;
@@ -247,8 +246,13 @@
       autoplay: false,
       path: './home/madlove-lottie.json'
     });
+    var SPEED = 1, HOLD_MS = 1000;
+    anim.setSpeed(SPEED);
     function showWord() { anim.goToAndStop(anim.totalFrames - 0.3, true); }
-    anim.addEventListener('complete', showWord);
+    anim.addEventListener('complete', function () {
+      showWord();
+      setTimeout(function () { anim.goToAndPlay(0, true); }, HOLD_MS);
+    });
     anim.addEventListener('DOMLoaded', function () {
       if (still || !('IntersectionObserver' in window)) { showWord(); return; }
       new IntersectionObserver(function (entries, obs) {
