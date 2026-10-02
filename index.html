@@ -4,49 +4,52 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canada Basketball Women's Dashboards</title>
-<meta name="description" content="Analytics dashboards for Canada Basketball's women's programme: FIBA tournaments and the SSA 3x3 Women's Series.">
+<meta name="description" content="Analytics dashboards for Canada Basketball's women's programme: FIBA tournaments and 3x3.">
 <link rel="icon" href="./assets/canada-basketball-logo.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f5f6f8;
     --card: #ffffff;
     --text: #12161c;
     --muted: #5b6573;
-    --border: #e4e8ee;
     --accent: #D80621;
     --madlove: #a72232;
-    --madlove-dark: #861a28;
+    --madlove-dark: #7c1825;
+    --fiba3x3: #8B25F3;
   }
   * { box-sizing: border-box; }
+  html { background: var(--madlove-dark); }
   body {
     margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    position: relative;
+    background: linear-gradient(180deg, var(--madlove) 0%, var(--madlove-dark) 100%);
+    color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  main { flex: 1; width: 100%; }
+  /* Mad Love scribbles across the whole page */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url("./home/madlove-scribbles.png") center / cover no-repeat;
+    opacity: .3;
+    pointer-events: none;
+    z-index: 0;
+  }
+  header, main, .madlove-band { position: relative; z-index: 1; }
 
   /* ── Header ── */
-  .hero {
-    background: var(--accent);
-    color: #fff;
+  header {
     text-align: center;
-    padding: 32px 16px 72px;
+    padding: 36px 16px 28px;
   }
-  .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-  }
-  .topbar img {
+  header img {
     height: 72px;
     width: 72px;
     object-fit: contain;
@@ -55,14 +58,14 @@
     padding: 10px;
     box-shadow: 0 4px 14px rgba(0,0,0,.25);
   }
-  .hero h1 {
+  header h1 {
     margin: 18px 0 10px;
     font-size: clamp(26px, 4.4vw, 42px);
     font-weight: 900;
     letter-spacing: -0.02em;
     line-height: 1.1;
   }
-  .hero p {
+  header p {
     margin: 0 auto;
     max-width: 560px;
     font-size: 16px;
@@ -72,10 +75,11 @@
 
   /* ── Dashboard cards ── */
   main {
+    flex: 1;
+    width: 100%;
     max-width: 960px;
-    margin: -36px auto 0;
-    padding: 0 16px 56px;
-    position: relative;
+    margin: 0 auto;
+    padding: 8px 16px 40px;
   }
   .grid {
     display: grid;
@@ -87,41 +91,60 @@
     display: flex;
     flex-direction: column;
     background: var(--card);
-    border: 1px solid var(--border);
+    color: var(--text);
     border-radius: 14px;
     overflow: hidden;
     text-decoration: none;
-    color: inherit;
-    box-shadow: 0 6px 20px rgba(18, 22, 28, .08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
     transition: transform .15s ease, box-shadow .15s ease;
   }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(18, 22, 28, .14); }
-  .card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 16px 36px rgba(0, 0, 0, .32); }
+  .card:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
   .banner {
     position: relative;
     aspect-ratio: 1230 / 630;
-    background: linear-gradient(135deg, var(--accent), #8f1420);
     overflow: hidden;
+    background: #000;
   }
-  .banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .banner .scribbles {
-    position: absolute;
-    inset: 0;
-    background: url("./home/madlove-scribbles.png") center / cover no-repeat;
-    opacity: .3;
-  }
-  .banner .big {
-    position: absolute;
-    inset: 0;
+  .banner > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* 3x3 banner: FIBA 3x3 purple, WNT | W Series side by side in black */
+  .banner.three {
+    background: var(--fiba3x3);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
-    font-size: clamp(44px, 9vw, 72px);
-    font-weight: 900;
-    letter-spacing: -0.03em;
-    text-shadow: 0 3px 12px rgba(0,0,0,.25);
+    gap: 6%;
+    padding: 0 7%;
   }
+  .lockup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 40%;
+  }
+  .lockup img { width: 100%; height: auto; display: block; }
+  .lockup .bar {
+    margin-top: 8%;
+    width: 100%;
+    background: #000;
+    color: #fff;
+    text-align: center;
+    font-weight: 900;
+    font-size: clamp(11px, 2.2vw, 17px);
+    letter-spacing: .06em;
+    padding: 4% 0;
+    transform: skewX(-8deg);
+  }
+  .divider {
+    width: 4px;
+    align-self: stretch;
+    margin: 15% 0;
+    background: #000;
+    border-radius: 2px;
+  }
+
   .tag {
     position: absolute;
     top: 12px;
@@ -140,41 +163,20 @@
   .body p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; flex: 1; }
   .cta { margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--accent); }
 
-  /* ── Mad Love band: scribbles behind, wordmark written when scrolled into view ── */
+  /* ── Mad Love wordmark, written when scrolled into view ── */
   .madlove-band {
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(180deg, var(--madlove) 0%, var(--madlove-dark) 100%);
-    color: #fff;
     text-align: center;
-    padding: 48px 16px 40px;
+    padding: 24px 16px 28px;
   }
-  .madlove-band::before {
-    content: "";
-    position: absolute;
-    inset: -4%;
-    background: url("./home/madlove-scribbles.png") center / cover no-repeat;
-    opacity: .38;
-    pointer-events: none;
-  }
-  .madlove-band > * { position: relative; }
   .madlove {
     width: min(460px, 86vw);
     aspect-ratio: 888 / 324;
     margin: 0 auto;
   }
-  .madlove-band p {
-    margin: 14px auto 0;
-    max-width: 520px;
-    font-size: 15px;
-    line-height: 1.5;
-    opacity: .92;
-  }
   footer {
-    text-align: center;
     color: rgba(255,255,255,.8);
     font-size: 12.5px;
-    margin-top: 28px;
+    margin-top: 18px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -184,20 +186,17 @@
 </style>
 </head>
 <body>
-  <header class="hero">
-    <div class="topbar">
-      <img src="./assets/canada-basketball-logo.webp" alt="Canada Basketball">
-    </div>
+  <header>
+    <img src="./assets/canada-basketball-logo.webp" alt="Canada Basketball">
     <h1>Canada Basketball Women's Dashboards</h1>
-    <p>Analytics for Canada's women's programme — national team tournaments and the 3x3 circuit, updated automatically.</p>
+    <p>Analytics for Canada's women's programme — national team tournaments and 3x3, updated automatically.</p>
   </header>
 
   <main>
     <div class="grid">
       <a class="card" href="./tournaments/">
         <div class="banner">
-          <img src="./assets/banners/americup-2025.webp" alt="" loading="lazy">
-          <span class="tag">5x5</span>
+          <img src="./home/tournaments-banner.webp" alt="FIBA Basketball" loading="lazy">
         </div>
         <div class="body">
           <h2>Tournaments</h2>
@@ -207,14 +206,19 @@
       </a>
 
       <a class="card" href="./ssa-3x3/">
-        <div class="banner">
-          <div class="scribbles"></div>
-          <div class="big">3x3</div>
-          <span class="tag">2026–27</span>
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./home/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">WNT</div>
+          </div>
+          <div class="divider" aria-hidden="true"></div>
+          <div class="lockup">
+            <img src="./home/3x3-w-series.png" alt="3x3 W Series">
+          </div>
         </div>
         <div class="body">
-          <h2>SSA 3x3 Women's Series</h2>
-          <p>National teams and clubs on the 3x3 circuit — team, player, play-type and per-game stats from Strong Side Analytics.</p>
+          <h2>3x3 — WNT &amp; W Series</h2>
+          <p>Women's national teams and W Series clubs — team, player, play-type and per-game stats from Strong Side Analytics.</p>
           <div class="cta">View 3x3 dashboard &rarr;</div>
         </div>
       </a>
@@ -223,7 +227,6 @@
 
   <section class="madlove-band">
     <div class="madlove" id="madlove" role="img" aria-label="Mad Love"></div>
-    <p>If you can't stop her, you won't stop Mad Love.</p>
     <footer>Canada Basketball &nbsp;·&nbsp; Women's programme analytics</footer>
   </section>
 
