@@ -76,16 +76,19 @@
   main {
     flex: 1;
     width: 100%;
-    max-width: 960px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 8px 16px 40px;
   }
+  /* Two dashboards, 5x5 and 3x3: side by side on desktop, stacked on a phone. */
   .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
   }
-  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .grid { grid-template-columns: minmax(0, 520px); justify-content: center; } }
   .card {
     display: flex;
     flex-direction: column;
@@ -124,6 +127,9 @@
     max-width: 40%;
   }
   .lockup img { width: 100%; height: auto; display: block; }
+  /* A single lockup with a longer word: a little wider, so TOURNAMENTS fits its bar. */
+  .lockup.solo { max-width: 50%; }
+  .lockup.solo .bar { font-size: clamp(11px, 1.9vw, 15px); letter-spacing: .04em; }
   .lockup .bar {
     margin-top: 8%;
     width: 100%;
@@ -197,28 +203,23 @@
           <img src="./home/tournaments-banner.webp" alt="FIBA Basketball" loading="lazy">
         </div>
         <div class="body">
-          <h2>Tournaments</h2>
+          <h2>5x5 Tournaments</h2>
           <p>Box scores, standings, Four Factors and player rankings for every FIBA women's tournament Canada plays.</p>
           <div class="cta">View tournaments &rarr;</div>
         </div>
       </a>
 
-      <a class="card" href="./ssa-3x3/">
+      <a class="card" href="./3x3/">
         <div class="banner three">
-          <div class="lockup">
+          <div class="lockup solo">
             <img src="./home/3x3-mark.png" alt="FIBA 3x3">
-            <div class="bar">WNT</div>
-          </div>
-          <div class="divider" aria-hidden="true"></div>
-          <div class="lockup">
-            <img src="./home/3x3-mark.png" alt="FIBA 3x3">
-            <div class="bar">W SERIES</div>
+            <div class="bar">TOURNAMENTS</div>
           </div>
         </div>
         <div class="body">
-          <h2>3x3 — WNT &amp; W Series</h2>
-          <p>Women's national teams and W Series clubs — team, player, play-type and per-game stats from Strong Side Analytics.</p>
-          <div class="cta">View 3x3 dashboard &rarr;</div>
+          <h2>3x3 Tournaments</h2>
+          <p>Every FIBA 3x3 women's tournament Canada plays — AmeriCup, World Cup and Women's Series stops — plus WNT &amp; W Series season stats.</p>
+          <div class="cta">View 3x3 tournaments &rarr;</div>
         </div>
       </a>
     </div>
