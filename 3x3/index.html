@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="/home/favicon-32.png">
+<link rel="apple-touch-icon" href="/home/favicon-256.png">
+<title>Canada Basketball 3x3 Tournaments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* Mirrors the 5x5 tournaments hub (tournament-dashboard/reports/template/
+     hub_template.html); the banner is the landing page's FIBA 3x3 lockup. */
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --border: #e8eaef; --border2: #d3d8e0;
+    --text: #0f172a; --muted: #6b7280; --accent: #D80621; --fiba3x3: #8B25F3;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.5; }
+  .header { background: var(--accent); padding: 28px 24px; color: #fff; }
+  .header-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: center;
+                  gap: 20px; flex-wrap: wrap; text-align: center; }
+  .header-inner img { height: 72px; width: auto; flex-shrink: 0; background: #fff; border-radius: 12px; padding: 7px 11px;
+                      box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+  .header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+  .header p { margin: 0; font-size: 14px; opacity: .9; }
+  .header p a { color: #fff; text-decoration: none; font-weight: 600; }
+  .header p a:hover { text-decoration: underline; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+  .year-label { margin: 0 0 12px; font-size: 13px; font-weight: 800; letter-spacing: .12em; color: var(--muted);
+                display: flex; align-items: center; gap: 12px; }
+  .year-label::after { content: ""; flex: 1; height: 1px; background: var(--border2); }
+  .series-label { margin: 18px 0 10px; font-size: 12px; font-weight: 700; color: var(--text2, #3f4a5a); }
+  .year .grid + .series-label { margin-top: 28px; }
+  .year + .year { margin-top: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+  @media (max-width: 1000px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px)  { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+          text-decoration: none; color: inherit; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+          transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(0,0,0,.1); border-color: var(--border2); }
+  .banner { position: relative; aspect-ratio: 1230 / 630; overflow: hidden; }
+  .banner.three { background: var(--fiba3x3); display: flex; align-items: center; justify-content: center; }
+  .lockup { width: 46%; display: flex; flex-direction: column; align-items: center; }
+  .lockup img { width: 100%; height: auto; display: block; }
+  .lockup .bar { margin-top: 8%; width: 100%; background: #000; color: #fff; text-align: center; font-weight: 900;
+                 font-size: clamp(10px, 1.3vw, 14px); letter-spacing: .06em; padding: 4% 0; transform: skewX(-8deg); }
+  .badge { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+           letter-spacing: .04em; padding: 3px 9px; border-radius: 999px; background: rgba(0,0,0,.35); color: #fff;
+           border: 1px solid rgba(255,255,255,.35); }
+  .body { padding: 14px 16px 16px; }
+  .full-name { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+  .meta { font-size: 12px; color: var(--muted); }
+  .cta { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12.5px; font-weight: 700; color: var(--accent); }
+  /* The WNT & W Series card: two lockups and a divider, as it was on the landing page. */
+  .banner.pair { gap: 6%; padding: 0 7%; }
+  .banner.pair .lockup { flex: 1; width: auto; max-width: 40%; }
+  .divider { width: 4px; align-self: stretch; margin: 15% 0; background: #000; border-radius: 2px; }
+  .more { margin-top: 44px; }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-inner">
+      <img src="./assets/canada-basketball-logo.webp" alt="Canada Basketball">
+      <div>
+        <h1>Canada Basketball 3x3 Tournaments</h1>
+        <p><a href="../">&larr; All women's dashboards</a></p>
+      </div>
+    </div>
+  </div>
+  <main>
+    <section class="year">
+      <h2 class="year-label">2026</h2>
+      <h3 class="series-label">Cups</h3>
+      <div class="grid">
+      <a class="card" href="./americup-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">AMERICUP 2026</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 AmeriCup 2026 — Women</p>
+          <div class="meta">San Salvador, El Salvador &nbsp;·&nbsp; 28 Oct – 1 Nov 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./worldcup-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">WORLD CUP 2026</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 World Cup 2026 — Women</p>
+          <div class="meta">Warsaw, Poland &nbsp;·&nbsp; 1 – 7 Jun 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+      </div>
+      <h3 class="series-label">Women's Series</h3>
+      <div class="grid">
+      <a class="card" href="./ws-shanghai-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">SHANGHAI</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Shanghai Stop 2026</p>
+          <div class="meta">Shanghai, China &nbsp;·&nbsp; 16 – 17 May 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./ws-vienna-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">VIENNA</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Vienna Stop 2026</p>
+          <div class="meta">Vienna, Austria &nbsp;·&nbsp; 12 – 14 Jun 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./ws-poitiers-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">POITIERS</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Poitiers Stop 2026</p>
+          <div class="meta">Poitiers, France &nbsp;·&nbsp; 26 – 27 Jun 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./ws-marseille-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">MARSEILLE</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Marseille Stop 2026</p>
+          <div class="meta">Marseille, France &nbsp;·&nbsp; 3 – 4 Jul 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./ws-tokyo-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">TOKYO</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Tokyo Stop 2026</p>
+          <div class="meta">Tokyo, Japan &nbsp;·&nbsp; 1 – 2 Aug 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./ws-bangkok-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">BANGKOK</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Bangkok Stop 2026</p>
+          <div class="meta">Bangkok, Thailand &nbsp;·&nbsp; 22 – 23 Aug 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+
+      <a class="card" href="./ws-takasaki-2026/">
+        <div class="banner three">
+          <div class="lockup">
+            <img src="./assets/3x3-mark.png" alt="FIBA 3x3">
+            <div class="bar">TAKASAKI</div>
+          </div>
+          <span class="badge">Final</span>
+        </div>
+        <div class="body">
+          <p class="full-name">FIBA 3x3 Women's Series Takasaki Stop 2026</p>
+          <div class="meta">Takasaki, Gunma, Japan &nbsp;·&nbsp; 29 – 30 Aug 2026</div>
+          <div class="cta">View dashboard &rarr;</div>
+        </div>
+      </a>
+      </div>
+    </section>
+    <section class="year more">
+      <h2 class="year-label">SEASON STATS</h2>
+      <div class="grid">
+      <a class="card" href="../ssa-3x3/">
+        <div class="banner three pair">
+          <div class="lockup"><img src="./assets/3x3-mark.png" alt="FIBA 3x3"><div class="bar">WNT</div></div>
+          <div class="divider" aria-hidden="true"></div>
+          <div class="lockup"><img src="./assets/3x3-mark.png" alt="FIBA 3x3"><div class="bar">W SERIES</div></div>
+        </div>
+        <div class="body">
+          <p class="full-name">3x3 — WNT &amp; W Series</p>
+          <div class="meta">Women's national teams and W Series clubs — team, player, play-type and per-game stats from Strong Side Analytics.</div>
+          <div class="cta">View 3x3 dashboard &rarr;</div>
+        </div>
+      </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

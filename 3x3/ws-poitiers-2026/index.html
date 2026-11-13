@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="32x32" href="/home/favicon-32.png">
+<link rel="apple-touch-icon" href="/home/favicon-256.png">
+<title>FIBA 3x3 Tournament Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/css/flag-icons.min.css"/>
+<style>
+  /* Same tokens and chrome as the 5x5 tournament dashboard
+     (tournament-dashboard/reports/template/dashboard_template.html), so the
+     two read as one product. FIBA 3x3 purple marks what is 3x3-specific. */
+  :root {
+    --bg: #f5f6f8; --surface: #ffffff; --surface2: #fafbfc;
+    --border: #e8eaef; --border2: #d3d8e0;
+    --text: #0f172a; --text2: #3f4a5a; --muted: #6b7280; --muted2: #9ca3af;
+    --accent: #D80621; --accent-mid: #fecdd3;
+    --green: #16a34a; --green-bg: #f0fdf4; --green-border: #bbf7d0;
+    --red: #dc2626; --red-bg: #fef2f2; --red-border: #fecaca;
+    --blue: #2563eb; --fiba3x3: #8B25F3;
+    --zone-border: #0f172a; --shadow: rgba(16,24,40,.06); --chip: #f1f3f7;
+    --c-1pt: #D80621; --c-2pt: #2563eb; --c-ft: #9ca3af;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif;
+         font-size: 13.5px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+  /* HEADER */
+  .header { background: var(--accent); padding: 20px 32px; display: flex; align-items: center; gap: 22px; min-height: 104px; }
+  .header-logo { height: 62px; width: auto; background: #fff; border-radius: 12px; padding: 7px 11px;
+                 flex-shrink: 0; box-shadow: 0 2px 10px rgba(0,0,0,.24); }
+  .header-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2.6px; text-transform: uppercase; color: rgba(255,255,255,.72); margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
+  .chip-3x3 { background: var(--fiba3x3); color: #fff; border-radius: 4px; padding: 1px 6px; letter-spacing: 1px; }
+  .header-title { font-size: 30px; font-weight: 900; color: #fff; letter-spacing: -.8px; line-height: 1.1; }
+  .header-tools { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .header-sub { font-size: 12.5px; color: rgba(255,255,255,.82); font-weight: 600; }
+  .stamp { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.85); background: rgba(0,0,0,.18);
+           padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+  .stamp b { color: #fff; font-weight: 800; }
+  .back { color: rgba(255,255,255,.85); font-size: 11.5px; font-weight: 700; text-decoration: none; }
+  .back:hover { color: #fff; text-decoration: underline; }
+
+  /* DATE + SECTION NAV */
+  .date-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 2px; overflow-x: auto; }
+  .date-tab { padding: 11px 18px; font-size: 12px; font-weight: 600; cursor: pointer; border: 0; background: none; font-family: inherit;
+              border-bottom: 3px solid transparent; color: var(--muted); white-space: nowrap; }
+  .date-tab:hover { color: var(--text); }
+  .date-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .date-tab--all { font-weight: 800; margin-right: 10px; border-right: 1px solid var(--border); }
+  .date-tab small { display: block; font-size: 9.5px; font-weight: 600; color: var(--muted2); letter-spacing: .3px; }
+  .section-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex;
+                 overflow-x: auto; position: sticky; top: 0; z-index: 40; box-shadow: 0 1px 3px rgba(16,24,40,.04); align-items: center; }
+  .section-nav-item { padding: 8px 18px; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+                      color: var(--muted); white-space: nowrap; text-decoration: none; border-bottom: 2px solid transparent; }
+  .section-nav-item:hover { color: var(--accent); border-bottom-color: var(--accent-mid); }
+  .section-nav-item.current { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-team { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700;
+              letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 4px 4px 4px 12px; }
+  select, .seg button { font-family: inherit; }
+  .nav-team select, .ctl select { font-size: 11.5px; font-weight: 700; padding: 4px 8px; border: 1px solid var(--border2);
+              border-radius: 7px; background: var(--surface); color: var(--text); cursor: pointer; }
+  .nav-team select:hover, .ctl select:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* KPI STRIP */
+  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin: 20px 24px 0; }
+  @media (max-width: 1150px) { .kpi-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 620px)  { .kpi-row { grid-template-columns: repeat(2, 1fr); margin: 14px 10px 0; gap: 10px; } }
+  .kpi { background: var(--surface); border: 2px solid var(--zone-border); border-radius: 14px; padding: 16px 18px;
+         position: relative; overflow: hidden; display: flex; flex-direction: column;
+         box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 12px 28px -20px rgba(16,24,40,.18); }
+  .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--kpi-accent, var(--accent)); }
+  .kpi-label { font-size: 9.5px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+  .kpi-value { font-size: 27px; font-weight: 900; letter-spacing: -1px; line-height: 1.05; font-variant-numeric: tabular-nums;
+               display: flex; align-items: center; gap: 7px; }
+  .kpi-value .fi { width: 26px; height: 19px; border-radius: 3px; }
+  .kpi-value small { font-size: 14px; font-weight: 800; color: var(--muted); letter-spacing: 0; }
+  .kpi-sub { font-size: 10.5px; color: var(--muted); font-weight: 500; line-height: 1.35; margin-top: auto; padding-top: 5px; }
+
+  /* ZONES */
+  .zone { padding: 34px 32px 38px; margin: 20px 24px; border: 3px solid var(--zone-border); border-radius: 16px;
+          background: var(--surface); scroll-margin-top: 42px;
+          box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 12px 28px -18px rgba(16,24,40,.16); }
+  .zone-inner { max-width: 1380px; margin: 0 auto; }
+  .zone-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .zone-kicker { font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--accent); }
+  .zone-title { font-size: 27px; font-weight: 800; letter-spacing: -.6px; }
+  .zone-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; align-self: center; flex-wrap: wrap; }
+  .zone-lede { font-size: 12.5px; color: var(--text2); max-width: 900px; margin-bottom: 18px; }
+  .note { font-size: 10.5px; color: var(--muted); margin-top: 10px; }
+  .empty { padding: 26px; text-align: center; color: var(--muted); background: var(--surface2); border: 1px dashed var(--border2); border-radius: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: var(--surface); padding: 5px 11px; font-size: 11px; font-weight: 700; color: var(--muted); cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--border2); }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .ctl { display: inline-flex; align-items: center; gap: 6px; font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+
+  /* TABLES */
+  .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+  table.t th { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted);
+               padding: 6px 7px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  table.t th.grp { text-align: center; border-bottom: 2px solid var(--border2); color: var(--text2); }
+  table.t td { padding: 7px 7px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  table.t th:first-child, table.t td:first-child { text-align: left; }
+  table.t tr.sel td { background: #fff7ed; font-weight: 700; }
+  table.t th.sort { cursor: pointer; }
+  table.t th.sort:hover { color: var(--accent); }
+  table.t th.sorted { color: var(--accent); }
+  td.heat { font-weight: 600; color: var(--text); }
+  .sep { border-left: 1px solid var(--border2); }
+  .team-flag { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+  .fi { border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.08); flex-shrink: 0; }
+  .pos { color: var(--green); font-weight: 700; } .neg { color: var(--red); font-weight: 700; }
+  .legend { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--muted); margin-top: 10px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 18px; height: 10px; border-radius: 2px; }
+  .rail { box-shadow: inset 3px 0 0 var(--rail); }
+
+  /* FOUR FACTORS: table on the left, the possessions chart beside it (as on 5x5) */
+  /* Four factors, as on 5x5: the table on the left, the possessions chart beside it. */
+  .ff-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 24px; align-items: start; margin-top: 16px; }
+  @media (max-width: 1200px) { .ff-layout { grid-template-columns: 1fr; } }
+  .ff-scroll { overflow-x: auto; }
+  .ff-tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .ff-tbl th { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+               background: var(--surface2); padding: 10px 7px; text-align: right; border-bottom: 2px solid var(--border2); white-space: nowrap; }
+  .ff-tbl td { padding: 9px 7px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .ff-tbl th:first-child, .ff-tbl td:first-child { text-align: left; }
+  .ff-tbl thead tr.grp th { font-size: 10px; letter-spacing: 1.2px; color: var(--text2); text-align: center;
+                            border-bottom: 1px solid var(--border2); padding: 8px 7px 6px; }
+  .ff-tbl th.gs, .ff-tbl td.gs { border-left: 2px solid var(--border2); }
+  .ff-tbl td.zc { font-weight: 600; }
+  .ff-tbl td:not(:first-child), .ff-tbl th:not(:first-child) { text-align: center; }
+  .ff-tbl tr.me td { font-weight: 800; }
+  .ff-tbl tbody tr:hover td.zc { filter: brightness(.96); }
+  .ff-legend { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-top: 12px; }
+  .ff-legend .sws { display: flex; gap: 3px; }
+  .ff-legend .sw { width: 24px; height: 11px; border-radius: 3px; display: inline-block; }
+  .ff-foot { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .ff-right .poss-chart { margin-top: 10px; }
+  .ff-chart-title { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text2); }
+  .ff-chart-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .more { display: block; margin: 12px auto 0; font: inherit; font-size: 12px; font-weight: 700; padding: 7px 16px;
+          border: 1px solid var(--border2); border-radius: 8px; background: var(--surface); color: var(--text2); cursor: pointer; }
+  .more:hover { border-color: var(--accent); color: var(--accent); }
+  .poss-chart { width: 100%; height: auto; display: block; max-width: 860px; margin: 8px auto 0; }
+  .poss-chart .grid line { stroke: var(--border); }
+  .poss-chart .axis { stroke: var(--muted2); stroke-width: 1.2; stroke-dasharray: 4 4; }
+  .poss-chart .tick { font-size: 11px; fill: var(--muted); }
+  .poss-chart .alab { font-size: 12px; font-weight: 700; fill: var(--text2); }
+  .poss-chart .quad { font-size: 10.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; fill: var(--muted2); }
+  .poss-chart .lbl { font-size: 12px; font-weight: 800; fill: var(--text); paint-order: stroke; stroke: #fff; stroke-width: 3.5px; stroke-linejoin: round; }
+  .poss-chart .flag-mark { display: flex; line-height: 1; }
+  .poss-chart .flag-mark .fi { width: 100% !important; height: 100%; }
+  .poss-chart g.dim { opacity: .3; }
+
+  /* EFFICIENCY QUADRANT */
+  .chart-wrap { display: grid; grid-template-columns: 1fr 270px; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .chart-wrap { grid-template-columns: 1fr; } }
+  .quad { position: relative; border: 1px solid var(--border); border-radius: 12px; padding: 30px 34px 46px 74px; }
+  .quad-plot { position: relative; width: 100%; aspect-ratio: 16/10; }
+  .quad-fill { position: absolute; pointer-events: none; }
+  .quad-fill.good { background: var(--green-bg); } .quad-fill.bad { background: var(--red-bg); }
+  .quad-mid { position: absolute; background: var(--border2); }
+  .quad-dot { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; transition: transform .15s; }
+  .quad-dot:hover { transform: translate(-50%, -50%) scale(1.18); z-index: 5; }
+  .quad-dot .fi { width: 26px; height: 19px; border-radius: 3px; box-shadow: 0 0 0 2px var(--surface), 0 1px 4px var(--shadow); }
+  .quad-dot b { font-size: 10px; font-weight: 800; background: var(--surface); padding: 0 3px; border-radius: 3px; }
+  .quad-dot.dim { opacity: .3; }
+  .quad-dot.hi .fi { box-shadow: 0 0 0 3px var(--accent); }
+  .quad-axis { position: absolute; font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .quad-axis.x { bottom: 10px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  .quad-axis.y { left: 10px; top: 50%; writing-mode: vertical-rl; transform: translateY(-50%) rotate(180deg); }
+  .quad-tick { position: absolute; font-size: 9px; color: var(--muted2); white-space: nowrap; }
+  .quad-tick.avg { color: var(--accent); font-weight: 700; }
+  .quad-corner { position: absolute; font-size: 9px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; opacity: .75; }
+  .quad-corner.tr { top: 6px; right: 8px; color: var(--green); } .quad-corner.bl { bottom: 6px; left: 8px; color: var(--red); }
+  .side-card { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  @media (max-width: 760px) { .quad { padding: 22px 16px 44px 44px; } .quad-plot { aspect-ratio: 3/4; } .quad-dot b { display: none; } }
+
+  /* SHOOTING MIX */
+  .mix { display: flex; height: 12px; width: 150px; border-radius: 3px; overflow: hidden; background: var(--chip); }
+  .mix span { display: block; height: 100%; }
+
+  /* AWARDS (colours from the 5x5 dashboard) */
+  .awards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .award-tile { background: linear-gradient(142deg, var(--c-fill) 0%, var(--surface) 62%); border: 1px solid var(--border);
+                border-radius: 10px; padding: 12px 14px; position: relative; overflow: hidden; }
+  .award-tile::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--c-mid); }
+  .award-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .award-ring { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                font-size: 16px; flex-shrink: 0; background: var(--c-fill); border: 2px solid var(--c-mid); }
+  .award-name { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+  .award-desc { font-size: 9.5px; color: var(--muted2); }
+  .award-player { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+  .award-sub { font-size: 11px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .award-pill { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 8px; background: var(--c-fill); color: var(--c-text); white-space: nowrap; }
+  .award-mvp { --c-fill:#fef3db; --c-mid:#ca8a04; --c-text:#654501; }
+  .award-heater { --c-fill:#fae0e0; --c-mid:#dc2626; --c-text:#6f1111; }
+  .award-rainmaker { --c-fill:#defcf9; --c-mid:#0d9488; --c-text:#064a44; }
+  .award-facilitator { --c-fill:#dee7fc; --c-mid:#2563eb; --c-text:#0b2e7c; }
+  .award-glass { --c-fill:#ede7fd; --c-mid:#a78bfa; --c-text:#4c2a9e; }
+  .award-sparkplug { --c-fill:#dffae9; --c-mid:#16a34a; --c-text:#0b5125; }
+  .award-speed { --c-fill:#fbdeec; --c-mid:#ec4899; --c-text:#810d46; }
+  .award-stopper { --c-fill:#eceef1; --c-mid:#6b7280; --c-text:#374151; }
+  .award-surgical { --c-fill:#e0ffdb; --c-mid:#22c55e; --c-text:#0f5c2e; }
+  .award-icecold { --c-fill:#dcf3fe; --c-mid:#7dd3fc; --c-text:#035f8b; }
+  .award-hotpotato { --c-fill:#fdf0dc; --c-mid:#a16207; --c-text:#503103; }
+
+  /* STANDINGS */
+  .stand-wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 980px) { .stand-wrap { grid-template-columns: 1fr; } }
+  .qual-grid { display: flex; flex-direction: column; gap: 6px; }
+  .qual-row { display: grid; grid-template-columns: 34px 1fr auto auto auto; align-items: center; gap: 12px;
+              border: 1px solid var(--border); border-radius: 12px; padding: 9px 14px; }
+  .qual-row.medal { border-color: var(--green-border); background: linear-gradient(90deg, var(--green-bg), var(--surface) 55%); }
+  .qual-row.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .qual-rank { font-size: 15px; font-weight: 900; color: var(--muted2); text-align: center; }
+  .qual-row.medal .qual-rank { color: var(--green); }
+  .qual-team { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .qual-team small { font-size: 10px; font-weight: 500; color: var(--muted); }
+  .qual-rec { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .qual-diff { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+  .qual-badge { font-size: 9px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 3px 8px; border-radius: 20px;
+                min-width: 96px; text-align: center; background: var(--chip); color: var(--muted); border: 1px solid var(--border); }
+  .qual-row.medal .qual-badge { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .group-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  @media (max-width: 560px) { .group-grid { grid-template-columns: 1fr; } }
+  .group-card { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  .group-card h4 { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .group-card.qd h4 { color: var(--fiba3x3); }
+  .sub-h { font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+
+  /* SCORES */
+  .day-h { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); margin: 22px 0 10px; display: flex; gap: 10px; align-items: center; }
+  .day-h::after { content: ""; flex: 1; height: 1px; background: var(--border2); }
+  .day-h:first-child { margin-top: 0; }
+  [hidden] { display: none !important; }
+  .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; }
+  /* A day's games: two across, box score on top, lead tracker under it. */
+  .games-grid.days { grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
+  @media (max-width: 1100px) { .games-grid.days { grid-template-columns: 1fr; } }
+  .game-body.with-mom .mom { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  /* Momentum, as on the 5x5 page. */
+  .mom-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 11.5px; color: var(--text2); margin-bottom: 2px; }
+  .mom-legend i { display: inline-block; width: 18px; height: 4px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .mom-read { margin-left: auto; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .mom-svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+  .mom-mark { opacity: .13; filter: grayscale(1); pointer-events: none; }
+  .mom-q { stroke: var(--border2); stroke-dasharray: 4 5; }
+  .mom-zero { stroke: var(--muted2); stroke-width: 1; }
+  .mom-cursor { stroke: var(--text); stroke-width: 1; opacity: .5; pointer-events: none; }
+  .mom-hit { fill: transparent; cursor: crosshair; }
+  .mom-ql { font-size: 11px; fill: var(--muted); text-anchor: middle; }
+  .mom-side { font-size: 10px; font-weight: 800; letter-spacing: 1px; fill: var(--muted); }
+  .mom-bal { font-size: 10px; font-weight: 700; fill: var(--muted2); }
+  .lead-band { fill: #e8e8e8; } .lead-band2 { fill: #f7f7f7; }
+  .lead-v { stroke: #d6d6d6; stroke-width: 1; }
+  .lead-y { font-size: 12px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .lead-top { font-weight: 700; font-size: 10.5px; }
+  .mom-cursor-bar { fill: var(--text); opacity: .08; pointer-events: none; }
+  .mom-none { font-size: 12px; color: var(--muted); padding: 30px 0; text-align: center; }
+  @media (max-width: 420px) { .games-grid { grid-template-columns: 1fr; } }
+  .game-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .game-card:hover { border-color: var(--border2); box-shadow: 0 6px 18px -12px rgba(16,24,40,.28); }
+  .game-card.sel { border-color: var(--accent); }
+  .game-header { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); gap: 8px; }
+  .game-round { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  .game-boxlink { font-size: 11px; color: var(--accent); text-decoration: none; font-weight: 700; white-space: nowrap; }
+  .game-boxlink:hover { text-decoration: underline; }
+  .game-body { padding: 14px; }
+  .scoreline { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 12px; }
+  .team-block { flex: 1; text-align: center; }
+  .team-code { font-size: 20px; font-weight: 800; display: inline-flex; align-items: center; gap: 7px; }
+  .team-code .fi { width: 24px; height: 18px; }
+  .team-code.dim { color: var(--muted2); }
+  .team-name-small { font-size: 10px; color: var(--muted); }
+  .score-nums { font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .score-nums .lose { color: var(--muted2); }
+  .score-note { font-size: 10px; color: var(--muted); text-align: center; }
+  .top-line { font-size: 10.5px; color: var(--muted); margin-top: 8px; display: flex; justify-content: space-between; gap: 10px; }
+  .top-line b { color: var(--text2); }
+
+  @media (max-width: 620px) {
+    .header { padding: 14px 16px; min-height: 76px; gap: 14px; flex-wrap: wrap; }
+    .header-logo { height: 40px; padding: 5px 8px; }
+    .header-title { font-size: 20px; }
+    .header-tools { margin-left: 0; justify-content: flex-start; }
+    .date-nav, .section-nav { padding: 0 8px; }
+    .zone { margin: 14px 10px; padding: 20px 14px 24px; }
+    .zone-title { font-size: 21px; }
+    .qual-row { grid-template-columns: 26px 1fr auto auto; gap: 8px; padding: 9px 10px; }
+    .qual-badge { display: none; }
+  }
+  .zone { animation: rise .45s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="header">
+  <img class="header-logo" src="../assets/canada-basketball-logo.webp" alt="Canada Basketball">
+  <div>
+    <div class="header-eyebrow"><span class="chip-3x3">3x3</span><span id="eyebrow">FIBA 3x3 Women's Basketball</span></div>
+    <div class="header-title" id="title"></div>
+  </div>
+  <div class="header-tools">
+    <span class="header-sub" id="sub"></span>
+    <span class="stamp" id="stamp"></span>
+    <a class="back" href="../">&larr; All 3x3 tournaments</a>
+  </div>
+</header>
+
+<nav class="date-nav" id="dates" aria-label="Game day"></nav>
+<nav class="section-nav" id="secnav" aria-label="Sections">
+  <a class="section-nav-item" href="#section-factors">Four Factors</a>
+  <a class="section-nav-item" href="#section-eff">Team Efficiency</a>
+  <a class="section-nav-item" href="#section-shooting">Shooting</a>
+  <a class="section-nav-item" href="#section-awards">Awards</a>
+  <a class="section-nav-item" href="#section-stats">Player Stats</a>
+  <a class="section-nav-item" href="#section-standings">Standings</a>
+  <a class="section-nav-item" href="#section-scores">Scores</a>
+  <label class="nav-team">Team <select id="team"></select></label>
+</nav>
+
+<div class="kpi-row" id="kpis"></div>
+
+<section class="zone" id="section-factors"><div class="zone-inner">
+  <div class="zone-header">
+    <span class="zone-kicker">What drives it</span><h2 class="zone-title">Four Factors</h2>
+    <div class="zone-tools">
+      <div class="seg" id="ff-side"><button data-v="off">Offensive</button><button data-v="def">Defensive</button><button data-v="both" class="on">Both</button></div>
+      <div class="seg" id="ff-mode"><button data-v="values" class="on">Values</button><button data-v="z">Z-scores</button></div>
+    </div>
+  </div>
+  <p class="zone-lede">Shooting, rebounding, getting to the line and taking care of the ball — at both ends. Every factor is scored against the rest of this tournament and signed so that positive is good, then the net factors are added up. That total is the projection; the last columns check it against where each team finished.</p>
+  <div id="ff"></div>
+</div></section>
+
+<section class="zone" id="section-eff"><div class="zone-inner">
+  <div class="zone-header"><span class="zone-kicker">Both ends</span><h2 class="zone-title">Team Efficiency</h2></div>
+  <p class="zone-lede">Points scored and allowed per 100 possessions. 3x3 teams play at different paces, so raw totals flatter the faster sides. Top right is good at both ends.</p>
+  <div id="eff"></div>
+</div></section>
+
+<section class="zone" id="section-shooting"><div class="zone-inner">
+  <div class="zone-header"><span class="zone-kicker">Where the points come from</span><h2 class="zone-title">Shooting</h2></div>
+  <p class="zone-lede">Inside-the-arc 1-pointers, 2-pointers and free throws, with how each team splits its points between them. The 3x3 box score also counts key assists, drives and highlights, shown here per game.</p>
+  <div id="shooting"></div>
+</div></section>
+
+<section class="zone" id="section-awards"><div class="zone-inner">
+  <div class="zone-header"><span class="zone-kicker">Standouts</span><h2 class="zone-title">Awards</h2></div>
+  <p class="zone-lede" id="awards-lede"></p>
+  <div id="awards"></div>
+</div></section>
+
+<section class="zone" id="section-stats"><div class="zone-inner">
+  <div class="zone-header">
+    <span class="zone-kicker">Every player</span><h2 class="zone-title">Player Stats</h2>
+    <div class="zone-tools"><div class="seg" id="pl-mode"><button data-v="pg" class="on">Per game</button><button data-v="tot">Totals</button></div></div>
+  </div>
+  <div id="players"></div>
+</div></section>
+
+<section class="zone" id="section-standings"><div class="zone-inner">
+  <div class="zone-header"><span class="zone-kicker">How it finished</span><h2 class="zone-title">Standings</h2></div>
+  <div id="standings"></div>
+</div></section>
+
+<section class="zone" id="section-scores"><div class="zone-inner">
+  <div class="zone-header"><span class="zone-kicker">Every game</span><h2 class="zone-title" id="scores-title">Scores</h2></div>
+  <p class="zone-lede" id="scores-lede" hidden>Under each game, its lead tracker from FIBA's scoring play-by-play: the score margin every 15 seconds, home team above the line and away team below, each bar in the leading team's colour. A game won by reaching 21 stops early. Hover for the clock and score.</p>
+  <div id="scores"></div>
+</div></section>
+
+<script>
+const D = {"teams":{"AUS":{"name":"Australia","flag":"au","color":"#00843D","roster":["Emma Clarke","Hannah Hank","Lauren Nicholson","Marena Whittle"]},"FRA":{"name":"France","flag":"fr","color":"#002395","roster":["Laetitia Guapo","Marie Mané","Marie Milapie","Marie-Eve Paget"]},"RAP":{"name":"Rapid","flag":"ro","color":"#002B7F","roster":["Ainhoa Gervasini","Hortense Limouzin","Marta Miščenko","Martyna Petrenaite"]},"PRS":{"name":"Paris","flag":"fr","color":"#002395","roster":["Ana Tadic","Camille Droguet","Eve Wembanyama","Zoé Wadoux"]},"BEI":{"name":"Beijing","flag":"cn","color":"#DE2910","roster":["FengYi Sun","Wanglai Zhang","Xuemeng Wang","ZhiTing Zhang"]},"HUN":{"name":"Hungary","flag":"hu","color":"#477050","roster":["Fanni Szabó","Franka Toth","Mia David","Tamara Szerencsés"]},"NEF":{"name":"Neftchi SOCAR","flag":"az","color":"#0092BC","roster":["Aoi Katsura","Arica Carter","Dina Ulyanova","Nevena Vuckovic"]},"CAN":{"name":"Canada","flag":"ca","color":"#D80621","roster":["Cassandra Brown","Katherine Plouffe","Merissah Russell","Paige Crozon"]},"EGY":{"name":"Egypt","flag":"eg","color":"#CE1126","roster":["Hala ElShaarawy","Nadine Selaawy","Raneem Mohamed","Soraya Mohamed"]},"BEN":{"name":"Benin","flag":"bj","color":"#6b7280","roster":["Aishatou Kondoh","Gannigui Zime","Malikath Osseni","Océane Arlette Martine Nadiath Kounkou"]},"AMS":{"name":"Amsterdam","flag":"nl","color":"#F36C21","roster":["Keona Douwstra","Kiki Fleuren","Liselot Kulk"]},"OTT":{"name":"Ottawa","flag":"ca","color":"#D80621","roster":["Jade Belmore","Kacie Bosch","Niyah Becker","Saicha Grant-Allen"]},"ROM":{"name":"Rome","flag":"it","color":"#008C45","roster":["Anastasia Conte","Cristina Osazuwa","Ludovica Sammartino","Nancy N’guessan"]},"POL":{"name":"Poland","flag":"pl","color":"#DC143C","roster":["Aleksandra Zięmborska","Amalia Rembiszewska","Anna Pawłowska","Klaudia Gertchen"]},"AZE":{"name":"Azerbaijan","flag":"az","color":"#0092BC","roster":["Adila Yusubova","Binata Rizvanova","Laman Ibrahimova","Naila Alisultanova"]},"UGA":{"name":"Uganda","flag":"ug","color":"#6b7280","roster":["Jamila Nansikombi Gunter","Jane Asinde","Leslie Vorpahl","Melissa Akullu"]}},"games":[{"id":"cec04fbf-4ca2-4b6c-a3d7-eebaca9eefac","date":"2026-06-26","time":"09:00","name":"Qualifying Draw A game 1","group":"Qualifying Draw A","round":"QD","ot":false,"forfeit":false,"full":false,"h":"EGY","a":"AZE","hs":21,"as":10,"teams":{"EGY":{"pts":21,"p1m":13,"p2m":3,"ftm":2,"fouls":0},"AZE":{"pts":10,"p1m":4,"p2m":3,"ftm":0,"fouls":5}},"players":[{"pts":0,"id":"0042742a-ac0e-4606-a218-95c58048bf7e","n":"Naila Alisultanova","t":"AZE","j":"5"},{"pts":5,"id":"cbd14418-0c68-48d4-a295-387fb1305bba","n":"Binata Rizvanova","t":"AZE","j":"8"},{"pts":2,"id":"2ad0f04b-13aa-4adf-9ed1-e6a43914d384","n":"Adila Yusubova","t":"AZE","j":"20"},{"pts":3,"id":"dc241493-6f0f-4d6c-9bbd-a01e547f8e81","n":"Laman Ibrahimova","t":"AZE","j":"17"},{"pts":5,"id":"2b67e299-89bd-4e3e-a677-852e0428a0ad","n":"Nadine Selaawy","t":"EGY","j":"7"},{"pts":3,"id":"3a3f18fa-50ea-4121-b8d8-c04682882ff8","n":"Soraya Mohamed","t":"EGY","j":"8"},{"pts":6,"id":"d07f127f-61ce-4d68-9503-dce6bd87f461","n":"Hala ElShaarawy","t":"EGY","j":"23"},{"pts":7,"id":"fb317130-2d89-4ec5-b587-17c54b56f111","n":"Raneem Mohamed","t":"EGY","j":"15"}],"mom":[[28.6,0,1],[55.2,0,1],[102.5,0,1],[116.5,1,1],[156.0,0,1],[156.0,0,1],[164.7,1,1],[188.3,0,1],[195.7,1,2],[227.2,1,2],[249.4,0,1],[266.3,0,2],[284.4,0,1],[312.3,0,1],[324.7,0,1],[336.5,1,1],[343.5,0,1],[381.0,0,2],[407.5,1,1],[429.4,0,1],[445.9,0,1],[475.7,0,1],[490.0,0,1],[542.7,1,2],[554.7,0,2]]},{"id":"dc62d6ac-561e-4699-ad00-6b62c30e159a","date":"2026-06-26","time":"09:25","name":"Qualifying Draw B game 1","group":"Qualifying Draw B","round":"QD","ot":false,"forfeit":false,"full":false,"h":"ROM","a":"UGA","hs":15,"as":17,"teams":{"ROM":{"pts":15,"p1m":10,"p2m":0,"ftm":5,"fouls":6},"UGA":{"pts":17,"p1m":9,"p2m":3,"ftm":2,"fouls":7}},"players":[{"pts":3,"id":"8aa9402c-942e-4512-bbbd-6d2caf54ee06","n":"Melissa Akullu","t":"UGA","j":"18"},{"pts":5,"id":"0df92478-6ef1-42d6-9b09-f1cfbf958d27","n":"Leslie Vorpahl","t":"UGA","j":"1"},{"pts":4,"id":"eaa94eb1-5061-4a4f-baed-7152ee0d2b19","n":"Jane Asinde","t":"UGA","j":"35"},{"pts":5,"id":"5d4a9a44-dfe4-4417-a6ed-c53532a794d7","n":"Jamila Nansikombi Gunter","t":"UGA","j":"9"},{"pts":8,"id":"643b8e42-1868-4a3c-89d1-c6114b7f3a93","n":"Cristina Osazuwa","t":"ROM","j":"20"},{"pts":3,"id":"8ebcf076-e1fe-4d18-a283-6a56d022822b","n":"Ludovica Sammartino","t":"ROM","j":"0"},{"pts":4,"id":"b4d8185a-1794-44df-929a-199fa0270631","n":"Nancy N’guessan","t":"ROM","j":"11"},{"pts":0,"id":"916d16cf-0ccc-4f34-8fd0-b71f81a3ff95","n":"Anastasia Conte","t":"ROM","j":"5"}],"mom":[[37.8,1,1],[102.8,1,1],[111.9,0,1],[136.9,1,2],[160.8,1,1],[200.1,1,1],[233.9,1,1],[233.9,1,1],[242.5,1,1],[258.4,0,1],[258.4,0,1],[278.4,0,1],[293.0,1,2],[307.5,0,1],[321.4,0,1],[334.8,1,1],[382.3,1,1],[395.2,0,1],[402.9,1,1],[410.9,0,1],[429.5,0,1],[429.5,0,1],[471.0,1,2],[495.3,1,1],[544.7,0,1],[544.7,0,1],[563.8,0,1],[581.0,0,1],[586.7,0,1]]},{"id":"21f0b971-44da-4ab4-a8f1-afc51b01830d","date":"2026-06-26","time":"09:50","name":"Qualifying Draw A game 2","group":"Qualifying Draw A","round":"QD","ot":false,"forfeit":false,"full":false,"h":"BEN","a":"AZE","hs":15,"as":9,"teams":{"BEN":{"pts":15,"p1m":3,"p2m":4,"ftm":4,"fouls":2},"AZE":{"pts":9,"p1m":3,"p2m":3,"ftm":0,"fouls":7}},"players":[{"pts":1,"id":"0042742a-ac0e-4606-a218-95c58048bf7e","n":"Naila Alisultanova","t":"AZE","j":"5"},{"pts":5,"id":"cbd14418-0c68-48d4-a295-387fb1305bba","n":"Binata Rizvanova","t":"AZE","j":"8"},{"pts":1,"id":"dc241493-6f0f-4d6c-9bbd-a01e547f8e81","n":"Laman Ibrahimova","t":"AZE","j":"17"},{"pts":2,"id":"2ad0f04b-13aa-4adf-9ed1-e6a43914d384","n":"Adila Yusubova","t":"AZE","j":"20"},{"pts":10,"id":"94fb8c6e-c58d-4767-96c9-aec00303bec4","n":"Océane Arlette Martine Nadiath Kounkou","t":"BEN","j":"5"},{"pts":0,"id":"d1cdb907-3636-41e0-a762-c3b84951eba8","n":"Gannigui Zime","t":"BEN","j":"16"},{"pts":5,"id":"c686a3a9-327d-4b09-a256-d57367082f34","n":"Aishatou Kondoh","t":"BEN","j":"6"},{"pts":0,"id":"6a1a6292-f963-4775-9496-778e9e5e8f56","n":"Malikath Osseni","t":"BEN","j":"15"}],"mom":[[49.2,0,1],[127.4,1,2],[133.7,0,1],[262.6,1,1],[268.7,0,2],[276.9,1,2],[315.1,0,1],[334.3,0,2],[363.7,1,2],[413.7,0,1],[413.7,0,1],[413.7,0,1],[443.2,1,1],[453.9,0,2],[467.1,1,1],[474.4,0,1],[487.0,0,2]]},{"id":"06f08785-5067-46c6-a01a-42a5cbf747d7","date":"2026-06-26","time":"10:15","name":"Qualifying Draw B game 2","group":"Qualifying Draw B","round":"QD","ot":false,"forfeit":false,"full":false,"h":"PRS","a":"UGA","hs":18,"as":15,"teams":{"PRS":{"pts":18,"p1m":8,"p2m":5,"ftm":0,"fouls":4},"UGA":{"pts":15,"p1m":13,"p2m":0,"ftm":2,"fouls":5}},"players":[{"pts":6,"id":"eaa94eb1-5061-4a4f-baed-7152ee0d2b19","n":"Jane Asinde","t":"UGA","j":"35"},{"pts":2,"id":"5d4a9a44-dfe4-4417-a6ed-c53532a794d7","n":"Jamila Nansikombi Gunter","t":"UGA","j":"9"},{"pts":1,"id":"0df92478-6ef1-42d6-9b09-f1cfbf958d27","n":"Leslie Vorpahl","t":"UGA","j":"1"},{"pts":6,"id":"8aa9402c-942e-4512-bbbd-6d2caf54ee06","n":"Melissa Akullu","t":"UGA","j":"18"},{"pts":1,"id":"b177ac1c-49c0-4d4f-821d-d0209dd390f1","n":"Camille Droguet","t":"PRS","j":"7"},{"pts":3,"id":"3d6e4081-be1b-4907-85fc-c8a7e9620124","n":"Ana Tadic","t":"PRS","j":"15"},{"pts":10,"id":"0ab36c53-9621-4852-a2b9-844c51ff82c9","n":"Zoé Wadoux","t":"PRS","j":"17"},{"pts":4,"id":"c9b2832f-1267-4e82-beff-239cc74a60b7","n":"Eve Wembanyama","t":"PRS","j":"33"}],"mom":[[23.1,1,1],[61.3,0,1],[102.5,0,1],[138.4,0,1],[147.0,1,1],[154.7,0,2],[191.7,1,1],[220.8,0,1],[264.1,0,2],[271.4,0,2],[283.2,1,1],[297.2,1,1],[314.9,1,1],[323.2,0,1],[357.8,1,1],[366.8,0,2],[375.4,1,1],[389.8,0,1],[399.9,1,1],[406.9,0,1],[432.1,1,1],[432.1,1,1],[438.4,0,2],[449.7,1,1],[477.9,1,1],[528.0,1,1],[547.0,0,1],[569.2,1,1]]},{"id":"8dfaf06e-f56a-4132-a298-b558cf20cacb","date":"2026-06-26","time":"10:40","name":"Qualifying Draw A game 3","group":"Qualifying Draw A","round":"QD","ot":false,"forfeit":false,"full":false,"h":"EGY","a":"BEN","hs":21,"as":11,"teams":{"EGY":{"pts":21,"p1m":8,"p2m":6,"ftm":1,"fouls":0},"BEN":{"pts":11,"p1m":7,"p2m":2,"ftm":0,"fouls":4}},"players":[{"pts":3,"id":"94fb8c6e-c58d-4767-96c9-aec00303bec4","n":"Océane Arlette Martine Nadiath Kounkou","t":"BEN","j":"5"},{"pts":4,"id":"c686a3a9-327d-4b09-a256-d57367082f34","n":"Aishatou Kondoh","t":"BEN","j":"6"},{"pts":2,"id":"6a1a6292-f963-4775-9496-778e9e5e8f56","n":"Malikath Osseni","t":"BEN","j":"15"},{"pts":2,"id":"d1cdb907-3636-41e0-a762-c3b84951eba8","n":"Gannigui Zime","t":"BEN","j":"16"},{"pts":8,"id":"3a3f18fa-50ea-4121-b8d8-c04682882ff8","n":"Soraya Mohamed","t":"EGY","j":"8"},{"pts":3,"id":"d07f127f-61ce-4d68-9503-dce6bd87f461","n":"Hala ElShaarawy","t":"EGY","j":"23"},{"pts":4,"id":"2b67e299-89bd-4e3e-a677-852e0428a0ad","n":"Nadine Selaawy","t":"EGY","j":"7"},{"pts":6,"id":"fb317130-2d89-4ec5-b587-17c54b56f111","n":"Raneem Mohamed","t":"EGY","j":"15"}],"mom":[[31.1,0,1],[79.2,1,1],[108.8,0,1],[122.4,0,1],[154.8,1,1],[190.5,0,1],[206.6,1,1],[213.2,0,1],[245.0,0,2],[275.1,1,2],[282.6,0,2],[309.3,0,1],[319.3,0,2],[326.4,1,2],[336.4,0,1],[362.1,1,1],[368.2,0,2],[368.2,0,1],[397.8,0,2],[415.6,1,1],[422.3,0,1],[436.0,1,1],[448.8,1,1],[457.9,0,2]]},{"id":"c66f322a-9ef5-4fa7-a448-aae1da0ee2bf","date":"2026-06-26","time":"11:05","name":"Qualifying Draw B game 3","group":"Qualifying Draw B","round":"QD","ot":false,"forfeit":false,"full":false,"h":"ROM","a":"PRS","hs":16,"as":17,"teams":{"ROM":{"pts":16,"p1m":11,"p2m":1,"ftm":3,"fouls":6},"PRS":{"pts":17,"p1m":10,"p2m":3,"ftm":1,"fouls":7}},"players":[{"pts":3,"id":"b177ac1c-49c0-4d4f-821d-d0209dd390f1","n":"Camille Droguet","t":"PRS","j":"7"},{"pts":1,"id":"c9b2832f-1267-4e82-beff-239cc74a60b7","n":"Eve Wembanyama","t":"PRS","j":"33"},{"pts":9,"id":"0ab36c53-9621-4852-a2b9-844c51ff82c9","n":"Zoé Wadoux","t":"PRS","j":"17"},{"pts":4,"id":"3d6e4081-be1b-4907-85fc-c8a7e9620124","n":"Ana Tadic","t":"PRS","j":"15"},{"pts":3,"id":"b4d8185a-1794-44df-929a-199fa0270631","n":"Nancy N’guessan","t":"ROM","j":"11"},{"pts":3,"id":"8ebcf076-e1fe-4d18-a283-6a56d022822b","n":"Ludovica Sammartino","t":"ROM","j":"0"},{"pts":6,"id":"643b8e42-1868-4a3c-89d1-c6114b7f3a93","n":"Cristina Osazuwa","t":"ROM","j":"20"},{"pts":4,"id":"916d16cf-0ccc-4f34-8fd0-b71f81a3ff95","n":"Anastasia Conte","t":"ROM","j":"5"}],"mom":[[13.4,0,2],[26.0,0,1],[42.9,0,1],[93.4,0,1],[102.3,1,1],[127.0,0,1],[132.0,1,1],[150.4,1,1],[159.0,0,1],[202.1,1,1],[211.9,0,1],[261.1,0,1],[282.7,1,1],[282.7,1,1],[290.5,0,1],[318.3,0,1],[330.8,1,2],[344.4,0,1],[354.2,1,2],[384.6,1,1],[428.3,1,2],[461.6,1,1],[473.2,0,1],[528.6,1,1],[533.7,0,1],[552.7,0,1],[552.7,0,1],[563.3,1,1],[592.5,1,1]]},{"id":"5238c099-bcbb-42ee-b4d2-59a71aa81771","date":"2026-06-26","time":"19:00","name":"Pool C game 1","group":"Pool C","round":"RR","ot":false,"forfeit":false,"full":true,"h":"AMS","a":"EGY","hs":20,"as":21,"teams":{"AMS":{"pts":20,"p1m":6,"p1a":15,"p2m":5,"p2a":16,"ftm":4,"fta":6,"oreb":8,"dreb":14,"reb":22,"kast":5,"drv":1,"hl":6,"tov":6,"blk":0,"poss":42,"fouls":7,"bb":0,"dnk":0},"EGY":{"pts":21,"p1m":16,"p1a":23,"p2m":2,"p2a":8,"ftm":1,"fta":4,"oreb":2,"dreb":14,"reb":16,"kast":8,"drv":2,"hl":12,"tov":4,"blk":1,"poss":38,"fouls":7,"bb":1,"dnk":0}},"players":[{"pts":2,"pv":5.3,"p1m":2,"p1a":5,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":7,"oreb":2,"dreb":5,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"d07f127f-61ce-4d68-9503-dce6bd87f461","n":"Hala ElShaarawy","t":"EGY","j":"23"},{"pts":9,"pv":8.7,"p1m":5,"p1a":6,"p2m":2,"p2a":7,"ftm":0,"fta":0,"kast":2,"drv":1,"hl":4,"reb":1,"oreb":0,"dreb":1,"tov":2,"blk":1,"bb":0,"dnk":0,"id":"2b67e299-89bd-4e3e-a677-852e0428a0ad","n":"Nadine Selaawy","t":"EGY","j":"7"},{"pts":1,"pv":2.8,"p1m":0,"p1a":0,"p2m":0,"p2a":1,"ftm":1,"fta":2,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":0,"dreb":3,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"3a3f18fa-50ea-4121-b8d8-c04682882ff8","n":"Soraya Mohamed","t":"EGY","j":"8"},{"pts":9,"pv":12.3,"p1m":9,"p1a":12,"p2m":0,"p2a":0,"ftm":0,"fta":2,"kast":4,"drv":1,"hl":6,"reb":3,"oreb":0,"dreb":3,"tov":1,"blk":0,"bb":1,"dnk":0,"id":"fb317130-2d89-4ec5-b587-17c54b56f111","n":"Raneem Mohamed","t":"EGY","j":"15"},{"pts":6,"pv":12,"p1m":0,"p1a":0,"p2m":3,"p2a":9,"ftm":0,"fta":0,"kast":4,"drv":0,"hl":4,"reb":10,"oreb":3,"dreb":7,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"8561b0ed-c594-4d97-8e15-d231eba2ca81","n":"Kiki Fleuren","t":"AMS","j":"5"},{"pts":9,"pv":4.2,"p1m":5,"p1a":12,"p2m":0,"p2a":4,"ftm":4,"fta":6,"kast":0,"drv":0,"hl":0,"reb":5,"oreb":3,"dreb":2,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"9d33398d-fc76-4d9d-8058-d623a7f2c4ac","n":"Liselot Kulk","t":"AMS","j":"10"},{"pts":5,"pv":5.6,"p1m":1,"p1a":3,"p2m":2,"p2a":3,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":5,"oreb":1,"dreb":4,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"6ab9bab6-4246-46ed-a6cc-10a03aa93a89","n":"Keona Douwstra","t":"AMS","j":"6"}],"mom":[[9.5,0,2],[22.1,0,1],[34.7,1,1],[46.9,1,1],[104.9,0,1],[116.5,1,1],[131.0,1,2],[148.1,0,1],[163.0,0,2],[172.8,1,1],[178.8,1,1],[194.4,1,1],[218.1,0,1],[228.0,1,1],[236.0,0,2],[241.5,1,1],[250.0,0,1],[260.6,1,1],[286.5,0,1],[300.7,1,1],[310.8,1,1],[316.7,0,1],[342.1,1,1],[350.9,0,1],[375.5,0,2],[413.8,0,1],[424.0,1,1],[425.5,0,1],[434.4,1,1],[468.3,1,2],[516.9,1,1],[529.7,1,1],[533.6,0,2],[539.3,1,1]]},{"id":"b8422c33-57cb-4c64-9573-82a02380e84f","date":"2026-06-26","time":"19:25","name":"Pool D game 1","group":"Pool D","round":"RR","ot":false,"forfeit":false,"full":true,"h":"RAP","a":"PRS","hs":15,"as":19,"teams":{"RAP":{"pts":15,"p1m":10,"p1a":21,"p2m":2,"p2a":7,"ftm":1,"fta":5,"oreb":10,"dreb":7,"reb":17,"kast":4,"drv":1,"hl":5,"tov":7,"blk":0,"poss":39,"fouls":7,"bb":0,"dnk":0},"PRS":{"pts":19,"p1m":10,"p1a":17,"p2m":3,"p2a":11,"ftm":3,"fta":4,"oreb":8,"dreb":9,"reb":17,"kast":3,"drv":5,"hl":10,"tov":7,"blk":2,"poss":38,"fouls":7,"bb":0,"dnk":0}},"players":[{"pts":4,"pv":3,"p1m":1,"p1a":2,"p2m":1,"p2a":5,"ftm":1,"fta":1,"kast":0,"drv":1,"hl":1,"reb":2,"oreb":0,"dreb":2,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"0ab36c53-9621-4852-a2b9-844c51ff82c9","n":"Zoé Wadoux","t":"PRS","j":"17"},{"pts":4,"pv":1.7999999999999998,"p1m":1,"p1a":2,"p2m":1,"p2a":3,"ftm":1,"fta":2,"kast":0,"drv":0,"hl":0,"reb":1,"oreb":1,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"c9b2832f-1267-4e82-beff-239cc74a60b7","n":"Eve Wembanyama","t":"PRS","j":"33"},{"pts":7,"pv":10.4,"p1m":6,"p1a":7,"p2m":0,"p2a":2,"ftm":1,"fta":1,"kast":2,"drv":4,"hl":6,"reb":5,"oreb":2,"dreb":3,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"b177ac1c-49c0-4d4f-821d-d0209dd390f1","n":"Camille Droguet","t":"PRS","j":"7"},{"pts":4,"pv":8.3,"p1m":2,"p1a":6,"p2m":1,"p2a":1,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":3,"reb":8,"oreb":5,"dreb":3,"tov":1,"blk":2,"bb":0,"dnk":0,"id":"3d6e4081-be1b-4907-85fc-c8a7e9620124","n":"Ana Tadic","t":"PRS","j":"15"},{"pts":3,"pv":2.9,"p1m":3,"p1a":9,"p2m":0,"p2a":0,"ftm":0,"fta":1,"kast":1,"drv":1,"hl":2,"reb":2,"oreb":2,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"81544df8-a666-4132-99d0-35396c8c2c01","n":"Hortense Limouzin","t":"RAP","j":"3"},{"pts":6,"pv":5,"p1m":1,"p1a":2,"p2m":2,"p2a":4,"ftm":1,"fta":3,"kast":0,"drv":0,"hl":0,"reb":4,"oreb":2,"dreb":2,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"2d40dc55-2f69-43ea-9885-eee6f564d750","n":"Martyna Petrenaite","t":"RAP","j":"6"},{"pts":3,"pv":2.8,"p1m":3,"p1a":4,"p2m":0,"p2a":0,"ftm":0,"fta":1,"kast":2,"drv":0,"hl":2,"reb":4,"oreb":4,"dreb":0,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"30d5554f-239e-40bc-9346-7901462886c9","n":"Marta Miščenko","t":"RAP","j":"13"},{"pts":3,"pv":2.5,"p1m":3,"p1a":6,"p2m":0,"p2a":3,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":5,"oreb":2,"dreb":3,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"55d5ce56-117b-4ad6-88e1-aac0691aabbe","n":"Ainhoa Gervasini","t":"RAP","j":"00"}],"mom":[[33.9,0,1],[49.7,1,2],[69.3,0,1],[85.7,1,1],[97.4,0,1],[110.4,1,1],[134.4,1,1],[160.6,1,2],[226.9,1,1],[233.8,0,2],[246.0,1,1],[253.8,0,2],[281.6,1,1],[297.3,0,1],[311.2,1,1],[348.8,0,1],[368.5,0,1],[395.6,1,1],[419.4,1,1],[425.8,0,1],[474.4,0,1],[487.8,1,1],[494.8,0,1],[513.7,0,1],[526.6,1,1],[545.7,0,1],[553.2,1,1],[581.0,1,2],[598.5,1,1]]},{"id":"3090cebc-3b3c-464e-8ba0-40485b5e0ac3","date":"2026-06-26","time":"19:50","name":"Pool B game 1","group":"Pool B","round":"RR","ot":false,"forfeit":false,"full":true,"h":"CAN","a":"HUN","hs":21,"as":6,"teams":{"CAN":{"pts":21,"p1m":7,"p1a":10,"p2m":7,"p2a":9,"ftm":0,"fta":0,"oreb":2,"dreb":13,"reb":15,"kast":3,"drv":3,"hl":7,"tov":3,"blk":1,"poss":22,"fouls":2,"bb":0,"dnk":0},"HUN":{"pts":6,"p1m":5,"p1a":10,"p2m":0,"p2a":9,"ftm":1,"fta":1,"oreb":0,"dreb":3,"reb":3,"kast":2,"drv":2,"hl":4,"tov":2,"blk":0,"poss":22,"fouls":4,"bb":0,"dnk":0}},"players":[{"pts":0,"pv":1,"p1m":0,"p1a":3,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"bbc26c0d-1914-4103-ad61-09366c663f1d","n":"Fanni Szabó","t":"HUN","j":"15"},{"pts":4,"pv":3.3,"p1m":3,"p1a":3,"p2m":0,"p2a":3,"ftm":1,"fta":1,"kast":0,"drv":0,"hl":0,"reb":2,"oreb":0,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"edded1b7-5f06-4ad3-bb1b-9873b954c921","n":"Franka Toth","t":"HUN","j":"24"},{"pts":1,"pv":1.5,"p1m":1,"p1a":1,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"c35ae719-237c-440f-97a1-605f3c41e38b","n":"Mia David","t":"HUN","j":"18"},{"pts":1,"pv":1.1,"p1m":1,"p1a":3,"p2m":0,"p2a":4,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"49a0f011-1f32-45a3-96ec-bc783322b082","n":"Tamara Szerencsés","t":"HUN","j":"17"},{"pts":3,"pv":5.5,"p1m":1,"p1a":1,"p2m":1,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":2,"oreb":0,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"25967055-a5a8-4776-b802-2bda89b992f1","n":"Cassandra Brown","t":"CAN","j":"22"},{"pts":4,"pv":7.699999999999999,"p1m":2,"p1a":3,"p2m":1,"p2a":2,"ftm":0,"fta":0,"kast":2,"drv":2,"hl":4,"reb":3,"oreb":0,"dreb":3,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"0fecae5b-390d-42fb-a9fa-026b521af651","n":"Merissah Russell","t":"CAN","j":"13"},{"pts":4,"pv":4.2,"p1m":2,"p1a":3,"p2m":1,"p2a":2,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":4,"oreb":1,"dreb":3,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"c2e9db9b-8fe9-4cb8-98f8-e6d00480f24e","n":"Katherine Plouffe","t":"CAN","j":"2"},{"pts":10,"pv":18.3,"p1m":2,"p1a":3,"p2m":4,"p2a":4,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":2,"reb":4,"oreb":0,"dreb":4,"tov":0,"blk":1,"bb":0,"dnk":0,"id":"9eb7223c-7989-4241-9032-21831e76a4ca","n":"Paige Crozon","t":"CAN","j":"7"}],"mom":[[19.5,0,1],[51.9,0,1],[76.5,0,2],[100.3,0,1],[113.1,0,1],[120.1,1,1],[144.1,0,2],[168.2,1,1],[178.2,0,2],[197.2,1,1],[209.8,1,1],[217.5,0,2],[224.0,1,1],[275.1,0,2],[291.0,0,1],[315.6,0,2],[326.9,0,1],[351.7,0,2],[361.4,1,1],[373.2,0,1]]},{"id":"375043c0-2f5c-43cd-96ee-af05c08f554b","date":"2026-06-26","time":"20:15","name":"Pool A game 1","group":"Pool A","round":"RR","ot":false,"forfeit":false,"full":true,"h":"NEF","a":"OTT","hs":13,"as":17,"teams":{"NEF":{"pts":13,"p1m":11,"p1a":14,"p2m":1,"p2a":11,"ftm":0,"fta":0,"oreb":3,"dreb":13,"reb":16,"kast":3,"drv":5,"hl":8,"tov":11,"blk":0,"poss":36,"fouls":6,"bb":0,"dnk":0},"OTT":{"pts":17,"p1m":16,"p1a":21,"p2m":0,"p2a":11,"ftm":1,"fta":3,"oreb":5,"dreb":8,"reb":13,"kast":4,"drv":4,"hl":9,"tov":1,"blk":1,"poss":36,"fouls":3,"bb":0,"dnk":0}},"players":[{"pts":7,"pv":6.1,"p1m":7,"p1a":10,"p2m":0,"p2a":1,"ftm":0,"fta":1,"kast":0,"drv":1,"hl":1,"reb":2,"oreb":0,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"64e95761-a30d-4701-bb93-0eab70435323","n":"Saicha Grant-Allen","t":"OTT","j":"77"},{"pts":6,"pv":8.6,"p1m":6,"p1a":7,"p2m":0,"p2a":3,"ftm":0,"fta":0,"kast":1,"drv":2,"hl":3,"reb":4,"oreb":3,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"67cafc45-602b-44d6-9a57-5dd952a7afca","n":"Niyah Becker","t":"OTT","j":"14"},{"pts":2,"pv":2.8,"p1m":1,"p1a":1,"p2m":0,"p2a":3,"ftm":1,"fta":1,"kast":2,"drv":0,"hl":2,"reb":2,"oreb":0,"dreb":2,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"30b4a5e9-fec4-43f0-92f6-00d43208cf7c","n":"Jade Belmore","t":"OTT","j":"12"},{"pts":2,"pv":6,"p1m":2,"p1a":3,"p2m":0,"p2a":4,"ftm":0,"fta":1,"kast":1,"drv":1,"hl":3,"reb":5,"oreb":2,"dreb":3,"tov":0,"blk":1,"bb":0,"dnk":0,"id":"1b4db9a0-289e-48ed-b43e-2f8aa19bc31f","n":"Kacie Bosch","t":"OTT","j":"4"},{"pts":1,"pv":-1.2,"p1m":1,"p1a":2,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":1,"oreb":1,"dreb":0,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"1935022a-022f-4ce2-a066-e0668d650e84","n":"Dina Ulyanova","t":"NEF","j":"8"},{"pts":7,"pv":9,"p1m":5,"p1a":6,"p2m":1,"p2a":8,"ftm":0,"fta":0,"kast":3,"drv":5,"hl":8,"reb":5,"oreb":0,"dreb":5,"tov":5,"blk":0,"bb":0,"dnk":0,"id":"6f2c0b1e-3b45-4e1f-a873-c75f88da26a4","n":"Arica Carter","t":"NEF","j":"23"},{"pts":0,"pv":0,"p1m":0,"p1a":0,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"ed9947ca-0413-454e-b747-836be9c168bb","n":"Aoi Katsura","t":"NEF","j":"25"},{"pts":5,"pv":4,"p1m":5,"p1a":6,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":5,"oreb":1,"dreb":4,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"fef03dd3-c793-4055-8324-0bdd23d3362a","n":"Nevena Vuckovic","t":"NEF","j":"14"}],"mom":[[29.0,0,1],[34.7,1,1],[95.6,1,1],[104.3,0,1],[154.9,0,1],[185.8,0,1],[192.9,1,1],[200.7,1,1],[210.0,0,1],[226.1,1,1],[235.7,0,1],[245.5,1,1],[254.6,0,2],[281.6,1,1],[296.7,1,1],[307.0,0,1],[312.3,1,1],[376.2,1,1],[405.8,1,1],[421.8,0,1],[427.3,1,1],[446.4,1,1],[470.9,1,1],[497.3,0,1],[506.7,1,1],[547.5,1,1],[560.7,0,1],[584.1,0,1],[593.3,1,1]]},{"id":"fc31e01d-cfaf-4778-9d4b-66896258228e","date":"2026-06-26","time":"20:50","name":"Pool C game 3","group":"Pool C","round":"RR","ot":false,"forfeit":false,"full":true,"h":"AMS","a":"POL","hs":21,"as":14,"teams":{"AMS":{"pts":21,"p1m":11,"p1a":15,"p2m":4,"p2a":17,"ftm":2,"fta":5,"oreb":9,"dreb":4,"reb":13,"kast":3,"drv":6,"hl":9,"tov":1,"blk":0,"poss":36,"fouls":6,"bb":0,"dnk":0},"POL":{"pts":14,"p1m":6,"p1a":11,"p2m":3,"p2a":10,"ftm":2,"fta":2,"oreb":6,"dreb":9,"reb":15,"kast":4,"drv":1,"hl":5,"tov":10,"blk":0,"poss":33,"fouls":9,"bb":0,"dnk":0}},"players":[{"pts":6,"pv":8.7,"p1m":2,"p1a":2,"p2m":2,"p2a":3,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":0,"dreb":3,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"8262bad9-910f-4aa3-844f-3c764474679a","n":"Klaudia Gertchen","t":"POL","j":"15"},{"pts":2,"pv":0,"p1m":2,"p1a":3,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"538209cf-6287-4d21-9d56-ddcfeae1ba44","n":"Amalia Rembiszewska","t":"POL","j":"22"},{"pts":4,"pv":1.5,"p1m":0,"p1a":2,"p2m":1,"p2a":4,"ftm":2,"fta":2,"kast":1,"drv":0,"hl":1,"reb":1,"oreb":1,"dreb":0,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"d00ae800-0bff-4d00-8dda-019b6e255a73","n":"Anna Pawłowska","t":"POL","j":"4"},{"pts":2,"pv":3.7,"p1m":2,"p1a":4,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":2,"drv":1,"hl":3,"reb":8,"oreb":3,"dreb":5,"tov":4,"blk":0,"bb":0,"dnk":0,"id":"35be417e-014b-4a1f-a11b-e1682e6dbb69","n":"Aleksandra Zięmborska","t":"POL","j":"0"},{"pts":8,"pv":14.9,"p1m":4,"p1a":5,"p2m":2,"p2a":3,"ftm":0,"fta":2,"kast":1,"drv":4,"hl":5,"reb":7,"oreb":6,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"6ab9bab6-4246-46ed-a6cc-10a03aa93a89","n":"Keona Douwstra","t":"AMS","j":"6"},{"pts":7,"pv":5.1,"p1m":5,"p1a":8,"p2m":0,"p2a":5,"ftm":2,"fta":3,"kast":1,"drv":1,"hl":2,"reb":2,"oreb":1,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"9d33398d-fc76-4d9d-8058-d623a7f2c4ac","n":"Liselot Kulk","t":"AMS","j":"10"},{"pts":6,"pv":6.3,"p1m":2,"p1a":2,"p2m":2,"p2a":9,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":2,"oreb":1,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"8561b0ed-c594-4d97-8e15-d231eba2ca81","n":"Kiki Fleuren","t":"AMS","j":"5"}],"mom":[[7.8,0,1],[16.5,1,1],[39.3,1,1],[46.0,0,1],[61.0,1,1],[77.2,0,2],[87.0,1,2],[124.9,0,2],[149.2,1,2],[162.9,0,2],[212.1,1,2],[226.0,1,1],[234.3,0,1],[261.2,1,1],[271.5,0,1],[312.4,1,1],[322.6,0,1],[353.3,0,1],[366.4,0,1],[399.9,0,1],[421.5,0,1],[429.8,1,1],[442.8,0,2],[481.4,0,1],[508.3,0,1],[531.9,0,1],[541.5,1,1],[550.1,0,1]]},{"id":"08a6e4c8-fda4-4217-9b6f-9ed1656943a9","date":"2026-06-26","time":"21:15","name":"Pool D game 3","group":"Pool D","round":"RR","ot":false,"forfeit":false,"full":true,"h":"RAP","a":"AUS","hs":20,"as":21,"teams":{"RAP":{"pts":20,"p1m":9,"p1a":16,"p2m":3,"p2a":9,"ftm":5,"fta":6,"oreb":6,"dreb":10,"reb":16,"kast":5,"drv":5,"hl":10,"tov":7,"blk":0,"poss":38,"fouls":8,"bb":0,"dnk":0},"AUS":{"pts":21,"p1m":9,"p1a":13,"p2m":3,"p2a":10,"ftm":6,"fta":9,"oreb":3,"dreb":8,"reb":11,"kast":4,"drv":2,"hl":7,"tov":7,"blk":0,"poss":35,"fouls":7,"bb":1,"dnk":0}},"players":[{"pts":6,"pv":3.5,"p1m":4,"p1a":5,"p2m":0,"p2a":0,"ftm":2,"fta":3,"kast":0,"drv":0,"hl":0,"reb":2,"oreb":0,"dreb":2,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"0d5a8170-256e-42f3-b0c0-b53a0689e45e","n":"Hannah Hank","t":"AUS","j":"12"},{"pts":9,"pv":8.7,"p1m":3,"p1a":5,"p2m":3,"p2a":6,"ftm":0,"fta":2,"kast":0,"drv":0,"hl":1,"reb":5,"oreb":2,"dreb":3,"tov":1,"blk":0,"bb":1,"dnk":0,"id":"f17eb351-7e09-41ab-91c0-c062b4eb5543","n":"Emma Clarke","t":"AUS","j":"77"},{"pts":0,"pv":-1,"p1m":0,"p1a":0,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":0,"oreb":0,"dreb":0,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"3c97eeef-a3d2-45c5-8ec5-d63206830b70","n":"Lauren Nicholson","t":"AUS","j":"1"},{"pts":6,"pv":8.1,"p1m":2,"p1a":3,"p2m":0,"p2a":3,"ftm":4,"fta":4,"kast":3,"drv":2,"hl":5,"reb":1,"oreb":0,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"ca2a5d9d-6705-4776-8c7c-296ef1d96c0a","n":"Marena Whittle","t":"AUS","j":"21"},{"pts":6,"pv":10,"p1m":5,"p1a":5,"p2m":0,"p2a":0,"ftm":1,"fta":1,"kast":1,"drv":4,"hl":5,"reb":2,"oreb":1,"dreb":1,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"81544df8-a666-4132-99d0-35396c8c2c01","n":"Hortense Limouzin","t":"RAP","j":"3"},{"pts":3,"pv":2,"p1m":2,"p1a":5,"p2m":0,"p2a":0,"ftm":1,"fta":1,"kast":0,"drv":0,"hl":0,"reb":3,"oreb":2,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"30d5554f-239e-40bc-9346-7901462886c9","n":"Marta Miščenko","t":"RAP","j":"13"},{"pts":8,"pv":4.6,"p1m":1,"p1a":3,"p2m":2,"p2a":8,"ftm":3,"fta":3,"kast":0,"drv":1,"hl":1,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"2d40dc55-2f69-43ea-9885-eee6f564d750","n":"Martyna Petrenaite","t":"RAP","j":"6"},{"pts":3,"pv":6.300000000000001,"p1m":1,"p1a":3,"p2m":1,"p2a":1,"ftm":0,"fta":1,"kast":4,"drv":0,"hl":4,"reb":7,"oreb":2,"dreb":5,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"55d5ce56-117b-4ad6-88e1-aac0691aabbe","n":"Ainhoa Gervasini","t":"RAP","j":"00"}],"mom":[[41.1,0,1],[51.5,1,1],[61.4,0,1],[92.2,1,1],[100.3,0,1],[137.2,1,1],[137.2,1,1],[204.1,0,1],[210.1,1,2],[229.4,0,1],[242.3,1,1],[286.2,0,2],[294.2,1,1],[310.1,0,1],[331.9,0,1],[333.8,1,1],[333.8,1,1],[362.8,1,1],[369.0,0,1],[383.3,0,1],[391.4,1,1],[406.5,1,1],[427.6,0,2],[437.9,1,1],[465.1,1,1],[481.2,0,1],[488.2,1,1],[493.9,1,1],[508.1,0,1],[517.7,0,2],[533.3,0,1],[535.9,0,1],[546.1,1,2],[561.5,0,1],[570.9,1,2]]},{"id":"4feb141e-6632-4cf4-8cd9-51c62c10c51b","date":"2026-06-26","time":"21:40","name":"Pool B game 3","group":"Pool B","round":"RR","ot":false,"forfeit":false,"full":true,"h":"CAN","a":"BEI","hs":18,"as":11,"teams":{"CAN":{"pts":18,"p1m":14,"p1a":20,"p2m":0,"p2a":9,"ftm":4,"fta":4,"oreb":6,"dreb":11,"reb":17,"kast":4,"drv":6,"hl":11,"tov":1,"blk":1,"poss":34,"fouls":4,"bb":0,"dnk":0},"BEI":{"pts":11,"p1m":3,"p1a":7,"p2m":4,"p2a":19,"ftm":0,"fta":0,"oreb":5,"dreb":7,"reb":12,"kast":1,"drv":2,"hl":3,"tov":9,"blk":0,"poss":35,"fouls":5,"bb":0,"dnk":0}},"players":[{"pts":6,"pv":4.5,"p1m":2,"p1a":2,"p2m":2,"p2a":7,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":1,"oreb":0,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"f6fb7b33-82b3-4abd-8b0d-68ccbab1e068","n":"Xuemeng Wang","t":"BEI","j":"18"},{"pts":0,"pv":0,"p1m":0,"p1a":1,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":2,"oreb":1,"dreb":1,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"820df89b-995f-4725-b529-7f6c1e41892c","n":"ZhiTing Zhang","t":"BEI","j":"10"},{"pts":3,"pv":1.0999999999999996,"p1m":1,"p1a":4,"p2m":1,"p2a":4,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":4,"oreb":0,"dreb":4,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"aeab2aef-947d-4a18-b3dd-863ab8a8ed5c","n":"Wanglai Zhang","t":"BEI","j":"2"},{"pts":2,"pv":1,"p1m":0,"p1a":0,"p2m":1,"p2a":8,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":1,"oreb":1,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"09dc8674-ba8a-4eda-97ca-4c75f245cfaa","n":"FengYi Sun","t":"BEI","j":"9"},{"pts":6,"pv":7.5,"p1m":3,"p1a":3,"p2m":0,"p2a":2,"ftm":3,"fta":3,"kast":0,"drv":0,"hl":0,"reb":6,"oreb":3,"dreb":3,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"25967055-a5a8-4776-b802-2bda89b992f1","n":"Cassandra Brown","t":"CAN","j":"22"},{"pts":1,"pv":0.8,"p1m":0,"p1a":1,"p2m":0,"p2a":2,"ftm":1,"fta":1,"kast":0,"drv":0,"hl":0,"reb":1,"oreb":0,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"0fecae5b-390d-42fb-a9fa-026b521af651","n":"Merissah Russell","t":"CAN","j":"13"},{"pts":6,"pv":11,"p1m":6,"p1a":9,"p2m":0,"p2a":3,"ftm":0,"fta":0,"kast":2,"drv":3,"hl":6,"reb":4,"oreb":2,"dreb":2,"tov":0,"blk":1,"bb":0,"dnk":0,"id":"9eb7223c-7989-4241-9032-21831e76a4ca","n":"Paige Crozon","t":"CAN","j":"7"},{"pts":5,"pv":9.8,"p1m":5,"p1a":7,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":2,"drv":3,"hl":5,"reb":4,"oreb":1,"dreb":3,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"c2e9db9b-8fe9-4cb8-98f8-e6d00480f24e","n":"Katherine Plouffe","t":"CAN","j":"2"}],"mom":[[46.9,0,1],[93.2,0,1],[150.7,0,1],[189.2,0,1],[211.0,0,1],[260.9,0,1],[278.4,0,1],[286.7,1,1],[344.8,0,1],[357.8,1,2],[367.2,0,1],[374.5,1,2],[379.9,0,1],[399.9,0,1],[421.3,0,1],[431.7,1,1],[491.6,0,1],[510.0,0,1],[525.6,0,1],[543.4,1,2],[555.7,0,1],[568.0,1,1],[578.7,0,1],[585.5,1,2],[592.4,0,1]]},{"id":"6a9807bb-ebe8-4079-944d-fb1af8c5f5a6","date":"2026-06-26","time":"22:05","name":"Pool A game 3","group":"Pool A","round":"RR","ot":false,"forfeit":false,"full":true,"h":"NEF","a":"FRA","hs":6,"as":21,"teams":{"NEF":{"pts":6,"p1m":6,"p1a":13,"p2m":0,"p2a":6,"ftm":0,"fta":0,"oreb":3,"dreb":8,"reb":11,"kast":1,"drv":3,"hl":5,"tov":9,"blk":1,"poss":28,"fouls":3,"bb":0,"dnk":0},"FRA":{"pts":21,"p1m":6,"p1a":13,"p2m":7,"p2a":14,"ftm":1,"fta":1,"oreb":6,"dreb":8,"reb":14,"kast":5,"drv":2,"hl":7,"tov":1,"blk":0,"poss":29,"fouls":5,"bb":0,"dnk":0}},"players":[{"pts":3,"pv":4.8,"p1m":2,"p1a":6,"p2m":0,"p2a":0,"ftm":1,"fta":1,"kast":2,"drv":0,"hl":2,"reb":3,"oreb":2,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"2737ee75-c5ed-4f29-ac97-3cd31b22ee38","n":"Marie Milapie","t":"FRA","j":"13"},{"pts":2,"pv":4.5,"p1m":0,"p1a":0,"p2m":1,"p2a":2,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":1,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"5b449718-1a08-4ccc-a3ef-9ae9c055b6b9","n":"Marie-Eve Paget","t":"FRA","j":"5"},{"pts":5,"pv":7.6,"p1m":3,"p1a":5,"p2m":1,"p2a":3,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":5,"oreb":3,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"d1aa5c96-6383-43cb-b058-bdad3583c9db","n":"Laetitia Guapo","t":"FRA","j":"12"},{"pts":11,"pv":13.5,"p1m":1,"p1a":2,"p2m":5,"p2a":9,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":1,"oreb":0,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"b17d586b-f5ed-4cba-b8a9-97922770ac01","n":"Marie Mané","t":"FRA","j":"1"},{"pts":0,"pv":0,"p1m":0,"p1a":0,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"ed9947ca-0413-454e-b747-836be9c168bb","n":"Aoi Katsura","t":"NEF","j":"25"},{"pts":3,"pv":6.8,"p1m":3,"p1a":6,"p2m":0,"p2a":5,"ftm":0,"fta":0,"kast":1,"drv":3,"hl":5,"reb":4,"oreb":0,"dreb":4,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"6f2c0b1e-3b45-4e1f-a873-c75f88da26a4","n":"Arica Carter","t":"NEF","j":"23"},{"pts":0,"pv":-3,"p1m":0,"p1a":1,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":2,"oreb":0,"dreb":2,"tov":4,"blk":0,"bb":0,"dnk":0,"id":"1935022a-022f-4ce2-a066-e0668d650e84","n":"Dina Ulyanova","t":"NEF","j":"8"},{"pts":3,"pv":2,"p1m":3,"p1a":6,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":3,"oreb":3,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"fef03dd3-c793-4055-8324-0bdd23d3362a","n":"Nevena Vuckovic","t":"NEF","j":"14"}],"mom":[[29.3,0,1],[32.9,1,2],[55.6,1,2],[63.6,0,1],[121.2,1,2],[128.6,0,1],[148.0,1,2],[155.5,0,1],[160.7,1,1],[175.1,1,1],[195.5,0,1],[218.6,1,1],[233.0,1,1],[279.7,1,1],[291.9,1,2],[340.1,1,1],[397.1,1,1],[410.9,0,1],[421.9,1,2],[447.2,1,2]]},{"id":"49ee4c56-e051-41ff-922f-85826e532913","date":"2026-06-26","time":"22:40","name":"Pool C game 2","group":"Pool C","round":"RR","ot":false,"forfeit":false,"full":true,"h":"POL","a":"EGY","hs":11,"as":21,"teams":{"POL":{"pts":11,"p1m":5,"p1a":12,"p2m":2,"p2a":12,"ftm":2,"fta":2,"oreb":5,"dreb":6,"reb":11,"kast":2,"drv":2,"hl":4,"tov":5,"blk":0,"poss":31,"fouls":5,"bb":0,"dnk":0},"EGY":{"pts":21,"p1m":11,"p1a":18,"p2m":4,"p2a":7,"ftm":2,"fta":2,"oreb":4,"dreb":12,"reb":16,"kast":5,"drv":4,"hl":11,"tov":4,"blk":2,"poss":31,"fouls":3,"bb":0,"dnk":0}},"players":[{"pts":7,"pv":7.2,"p1m":3,"p1a":4,"p2m":2,"p2a":4,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"2b67e299-89bd-4e3e-a677-852e0428a0ad","n":"Nadine Selaawy","t":"EGY","j":"7"},{"pts":0,"pv":2.5,"p1m":0,"p1a":0,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":2,"drv":0,"hl":2,"reb":1,"oreb":0,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"3a3f18fa-50ea-4121-b8d8-c04682882ff8","n":"Soraya Mohamed","t":"EGY","j":"8"},{"pts":10,"pv":15.600000000000001,"p1m":4,"p1a":7,"p2m":2,"p2a":2,"ftm":2,"fta":2,"kast":3,"drv":1,"hl":5,"reb":7,"oreb":0,"dreb":7,"tov":2,"blk":1,"bb":0,"dnk":0,"id":"fb317130-2d89-4ec5-b587-17c54b56f111","n":"Raneem Mohamed","t":"EGY","j":"15"},{"pts":4,"pv":7.300000000000001,"p1m":4,"p1a":7,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":2,"hl":3,"reb":6,"oreb":4,"dreb":2,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"d07f127f-61ce-4d68-9503-dce6bd87f461","n":"Hala ElShaarawy","t":"EGY","j":"23"},{"pts":3,"pv":3.8,"p1m":3,"p1a":3,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":0,"drv":2,"hl":2,"reb":2,"oreb":1,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"d00ae800-0bff-4d00-8dda-019b6e255a73","n":"Anna Pawłowska","t":"POL","j":"4"},{"pts":6,"pv":4.1,"p1m":1,"p1a":2,"p2m":2,"p2a":7,"ftm":1,"fta":1,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"8262bad9-910f-4aa3-844f-3c764474679a","n":"Klaudia Gertchen","t":"POL","j":"15"},{"pts":0,"pv":3,"p1m":0,"p1a":5,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":6,"oreb":2,"dreb":4,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"538209cf-6287-4d21-9d56-ddcfeae1ba44","n":"Amalia Rembiszewska","t":"POL","j":"22"},{"pts":2,"pv":0,"p1m":1,"p1a":2,"p2m":0,"p2a":1,"ftm":1,"fta":1,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"35be417e-014b-4a1f-a11b-e1682e6dbb69","n":"Aleksandra Zięmborska","t":"POL","j":"0"}],"mom":[[9.4,0,1],[17.6,1,1],[52.1,1,2],[77.3,1,1],[95.1,1,1],[95.1,1,1],[107.9,0,1],[125.8,1,1],[149.6,1,2],[189.0,1,1],[212.0,1,1],[250.5,1,2],[255.6,0,1],[270.6,0,2],[288.3,0,1],[315.1,1,1],[320.9,0,1],[327.5,1,1],[340.0,1,1],[349.6,0,1],[357.3,1,1],[367.6,0,2],[393.9,1,1],[400.7,0,1],[415.2,1,1],[456.8,1,2]]},{"id":"ac02a214-cef4-44ce-a537-a61084dd45aa","date":"2026-06-26","time":"23:05","name":"Pool D game 2","group":"Pool D","round":"RR","ot":false,"forfeit":false,"full":true,"h":"AUS","a":"PRS","hs":20,"as":13,"teams":{"AUS":{"pts":20,"p1m":11,"p1a":21,"p2m":4,"p2a":10,"ftm":1,"fta":1,"oreb":5,"dreb":12,"reb":17,"kast":3,"drv":2,"hl":6,"tov":2,"blk":1,"poss":34,"fouls":5,"bb":0,"dnk":0},"PRS":{"pts":13,"p1m":7,"p1a":17,"p2m":3,"p2a":11,"ftm":0,"fta":2,"oreb":7,"dreb":11,"reb":18,"kast":3,"drv":2,"hl":6,"tov":7,"blk":1,"poss":37,"fouls":4,"bb":0,"dnk":0}},"players":[{"pts":4,"pv":6.3,"p1m":2,"p1a":6,"p2m":1,"p2a":3,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":9,"oreb":3,"dreb":6,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"b177ac1c-49c0-4d4f-821d-d0209dd390f1","n":"Camille Droguet","t":"PRS","j":"7"},{"pts":0,"pv":-0.5,"p1m":0,"p1a":1,"p2m":0,"p2a":1,"ftm":0,"fta":2,"kast":1,"drv":0,"hl":1,"reb":1,"oreb":1,"dreb":0,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"c9b2832f-1267-4e82-beff-239cc74a60b7","n":"Eve Wembanyama","t":"PRS","j":"33"},{"pts":3,"pv":4.8,"p1m":3,"p1a":5,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":2,"reb":5,"oreb":1,"dreb":4,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"3d6e4081-be1b-4907-85fc-c8a7e9620124","n":"Ana Tadic","t":"PRS","j":"15"},{"pts":6,"pv":5.1,"p1m":2,"p1a":5,"p2m":2,"p2a":5,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":1,"oreb":1,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"0ab36c53-9621-4852-a2b9-844c51ff82c9","n":"Zoé Wadoux","t":"PRS","j":"17"},{"pts":2,"pv":3.3,"p1m":2,"p1a":5,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":0,"dreb":3,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"3c97eeef-a3d2-45c5-8ec5-d63206830b70","n":"Lauren Nicholson","t":"AUS","j":"1"},{"pts":6,"pv":9.5,"p1m":2,"p1a":2,"p2m":2,"p2a":4,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":5,"oreb":1,"dreb":4,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"ca2a5d9d-6705-4776-8c7c-296ef1d96c0a","n":"Marena Whittle","t":"AUS","j":"21"},{"pts":9,"pv":12.1,"p1m":5,"p1a":6,"p2m":2,"p2a":4,"ftm":0,"fta":0,"kast":1,"drv":2,"hl":4,"reb":2,"oreb":0,"dreb":2,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"f17eb351-7e09-41ab-91c0-c062b4eb5543","n":"Emma Clarke","t":"AUS","j":"77"},{"pts":3,"pv":1.7999999999999998,"p1m":2,"p1a":8,"p2m":0,"p2a":2,"ftm":1,"fta":1,"kast":0,"drv":0,"hl":0,"reb":4,"oreb":3,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"0d5a8170-256e-42f3-b0c0-b53a0689e45e","n":"Hannah Hank","t":"AUS","j":"12"}],"mom":[[11.2,0,2],[25.6,0,1],[39.1,0,2],[75.9,1,2],[86.6,0,1],[91.9,1,1],[110.8,1,2],[119.3,0,1],[124.8,1,2],[149.6,1,1],[158.7,0,1],[179.6,1,1],[189.6,1,1],[197.5,0,1],[209.2,1,1],[220.2,0,1],[268.6,0,1],[285.1,1,1],[320.4,0,1],[335.8,0,1],[360.5,0,1],[372.5,1,1],[388.9,0,1],[440.4,0,1],[528.2,0,2],[543.8,0,2]]},{"id":"26e9e96f-457a-4365-b5d5-1567ffd4fea5","date":"2026-06-26","time":"23:30","name":"Pool B game 2","group":"Pool B","round":"RR","ot":false,"forfeit":false,"full":true,"h":"BEI","a":"HUN","hs":21,"as":11,"teams":{"BEI":{"pts":21,"p1m":10,"p1a":16,"p2m":4,"p2a":12,"ftm":3,"fta":4,"oreb":4,"dreb":15,"reb":19,"kast":4,"drv":3,"hl":7,"tov":3,"blk":0,"poss":33,"fouls":4,"bb":0,"dnk":0},"HUN":{"pts":11,"p1m":10,"p1a":18,"p2m":0,"p2a":13,"ftm":1,"fta":1,"oreb":6,"dreb":10,"reb":16,"kast":2,"drv":3,"hl":5,"tov":3,"blk":0,"poss":35,"fouls":9,"bb":0,"dnk":0}},"players":[{"pts":4,"pv":4.1,"p1m":3,"p1a":5,"p2m":0,"p2a":4,"ftm":1,"fta":1,"kast":0,"drv":2,"hl":2,"reb":3,"oreb":0,"dreb":3,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"bbc26c0d-1914-4103-ad61-09366c663f1d","n":"Fanni Szabó","t":"HUN","j":"15"},{"pts":2,"pv":3.5,"p1m":2,"p1a":4,"p2m":0,"p2a":4,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":4,"oreb":0,"dreb":4,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"49a0f011-1f32-45a3-96ec-bc783322b082","n":"Tamara Szerencsés","t":"HUN","j":"17"},{"pts":5,"pv":6.4,"p1m":5,"p1a":9,"p2m":0,"p2a":4,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":7,"oreb":5,"dreb":2,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"edded1b7-5f06-4ad3-bb1b-9873b954c921","n":"Franka Toth","t":"HUN","j":"24"},{"pts":0,"pv":-1,"p1m":0,"p1a":0,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"c35ae719-237c-440f-97a1-605f3c41e38b","n":"Mia David","t":"HUN","j":"18"},{"pts":8,"pv":7.6,"p1m":6,"p1a":8,"p2m":1,"p2a":1,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":3,"oreb":0,"dreb":3,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"820df89b-995f-4725-b529-7f6c1e41892c","n":"ZhiTing Zhang","t":"BEI","j":"10"},{"pts":6,"pv":5.8,"p1m":1,"p1a":3,"p2m":1,"p2a":4,"ftm":3,"fta":4,"kast":1,"drv":0,"hl":1,"reb":5,"oreb":2,"dreb":3,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"09dc8674-ba8a-4eda-97ca-4c75f245cfaa","n":"FengYi Sun","t":"BEI","j":"9"},{"pts":2,"pv":7.1,"p1m":2,"p1a":4,"p2m":0,"p2a":3,"ftm":0,"fta":0,"kast":3,"drv":1,"hl":4,"reb":5,"oreb":1,"dreb":4,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"aeab2aef-947d-4a18-b3dd-863ab8a8ed5c","n":"Wanglai Zhang","t":"BEI","j":"2"},{"pts":5,"pv":7,"p1m":1,"p1a":1,"p2m":2,"p2a":4,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":2,"oreb":1,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"f6fb7b33-82b3-4abd-8b0d-68ccbab1e068","n":"Xuemeng Wang","t":"BEI","j":"18"}],"mom":[[50.9,0,1],[64.1,1,1],[79.8,1,1],[95.6,1,1],[103.6,0,1],[122.6,1,1],[149.7,1,1],[166.9,1,1],[188.8,1,1],[200.7,0,2],[233.7,0,2],[257.6,0,1],[273.0,0,1],[273.0,0,1],[287.3,1,1],[308.2,0,1],[337.2,1,1],[362.7,0,1],[405.6,0,1],[425.3,0,1],[447.0,0,1],[467.9,0,2],[485.0,1,1],[491.1,0,1],[515.7,1,1],[522.8,0,1],[538.3,0,2],[572.1,0,1]]},{"id":"25d9c4aa-f2a9-4137-b44d-13011e43fd66","date":"2026-06-26","time":"23:55","name":"Pool A game 2","group":"Pool A","round":"RR","ot":false,"forfeit":false,"full":true,"h":"FRA","a":"OTT","hs":14,"as":11,"teams":{"FRA":{"pts":14,"p1m":7,"p1a":17,"p2m":2,"p2a":7,"ftm":3,"fta":8,"oreb":6,"dreb":13,"reb":19,"kast":2,"drv":3,"hl":8,"tov":9,"blk":3,"poss":38,"fouls":9,"bb":0,"dnk":0},"OTT":{"pts":11,"p1m":6,"p1a":17,"p2m":0,"p2a":9,"ftm":5,"fta":7,"oreb":8,"dreb":10,"reb":18,"kast":1,"drv":2,"hl":5,"tov":8,"blk":2,"poss":39,"fouls":9,"bb":0,"dnk":0}},"players":[{"pts":1,"pv":2.8,"p1m":1,"p1a":3,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":3,"reb":7,"oreb":3,"dreb":4,"tov":4,"blk":1,"bb":0,"dnk":0,"id":"67cafc45-602b-44d6-9a57-5dd952a7afca","n":"Niyah Becker","t":"OTT","j":"14"},{"pts":2,"pv":1,"p1m":0,"p1a":1,"p2m":0,"p2a":4,"ftm":2,"fta":3,"kast":0,"drv":0,"hl":0,"reb":3,"oreb":1,"dreb":2,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"1b4db9a0-289e-48ed-b43e-2f8aa19bc31f","n":"Kacie Bosch","t":"OTT","j":"4"},{"pts":0,"pv":-1,"p1m":0,"p1a":4,"p2m":0,"p2a":4,"ftm":0,"fta":1,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"30b4a5e9-fec4-43f0-92f6-00d43208cf7c","n":"Jade Belmore","t":"OTT","j":"12"},{"pts":8,"pv":10.4,"p1m":5,"p1a":9,"p2m":0,"p2a":0,"ftm":3,"fta":3,"kast":0,"drv":1,"hl":2,"reb":6,"oreb":3,"dreb":3,"tov":0,"blk":1,"bb":0,"dnk":0,"id":"64e95761-a30d-4701-bb93-0eab70435323","n":"Saicha Grant-Allen","t":"OTT","j":"77"},{"pts":5,"pv":6.6,"p1m":1,"p1a":2,"p2m":1,"p2a":2,"ftm":2,"fta":2,"kast":1,"drv":0,"hl":1,"reb":5,"oreb":1,"dreb":4,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"b17d586b-f5ed-4cba-b8a9-97922770ac01","n":"Marie Mané","t":"FRA","j":"1"},{"pts":6,"pv":8.1,"p1m":4,"p1a":9,"p2m":1,"p2a":2,"ftm":0,"fta":3,"kast":0,"drv":3,"hl":6,"reb":3,"oreb":1,"dreb":2,"tov":2,"blk":3,"bb":0,"dnk":0,"id":"d1aa5c96-6383-43cb-b058-bdad3583c9db","n":"Laetitia Guapo","t":"FRA","j":"12"},{"pts":2,"pv":0.20000000000000018,"p1m":1,"p1a":4,"p2m":0,"p2a":0,"ftm":1,"fta":2,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":1,"dreb":2,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"2737ee75-c5ed-4f29-ac97-3cd31b22ee38","n":"Marie Milapie","t":"FRA","j":"13"},{"pts":1,"pv":1.2000000000000002,"p1m":1,"p1a":2,"p2m":0,"p2a":3,"ftm":0,"fta":1,"kast":0,"drv":0,"hl":0,"reb":4,"oreb":1,"dreb":3,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"5b449718-1a08-4ccc-a3ef-9ae9c055b6b9","n":"Marie-Eve Paget","t":"FRA","j":"5"}],"mom":[[19.2,1,1],[56.2,0,1],[105.6,1,1],[172.1,0,1],[177.9,1,1],[202.5,0,1],[247.6,0,1],[275.0,0,1],[289.6,1,1],[303.5,0,2],[334.3,0,2],[342.5,1,1],[370.6,1,1],[412.8,1,1],[454.2,0,1],[454.2,0,1],[492.6,0,1],[492.6,0,1],[515.6,1,1],[526.4,1,1],[592.4,0,1],[596.4,1,1],[596.4,1,1]]},{"id":"2277fcdd-9500-4a31-8e0d-08a8f96ccdc1","date":"2026-06-27","time":"19:40","name":"Quarter-Final game 1","group":"Quarter-Finals","round":"L8","ot":false,"forfeit":false,"full":true,"h":"FRA","a":"AMS","hs":18,"as":19,"teams":{"FRA":{"pts":18,"p1m":14,"p1a":21,"p2m":1,"p2a":5,"ftm":2,"fta":3,"oreb":5,"dreb":18,"reb":23,"kast":6,"drv":5,"hl":12,"tov":11,"blk":1,"poss":39,"fouls":8,"bb":0,"dnk":0},"AMS":{"pts":19,"p1m":7,"p1a":14,"p2m":5,"p2a":17,"ftm":2,"fta":4,"oreb":2,"dreb":6,"reb":8,"kast":3,"drv":5,"hl":8,"tov":4,"blk":0,"poss":38,"fouls":7,"bb":0,"dnk":0}},"players":[{"pts":10,"pv":6.699999999999999,"p1m":4,"p1a":7,"p2m":3,"p2a":7,"ftm":0,"fta":1,"kast":1,"drv":2,"hl":3,"reb":0,"oreb":0,"dreb":0,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"9d33398d-fc76-4d9d-8058-d623a7f2c4ac","n":"Liselot Kulk","t":"AMS","j":"10"},{"pts":4,"pv":5.8,"p1m":3,"p1a":7,"p2m":0,"p2a":3,"ftm":1,"fta":2,"kast":1,"drv":3,"hl":4,"reb":3,"oreb":0,"dreb":3,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"6ab9bab6-4246-46ed-a6cc-10a03aa93a89","n":"Keona Douwstra","t":"AMS","j":"6"},{"pts":5,"pv":5.6,"p1m":0,"p1a":0,"p2m":2,"p2a":7,"ftm":1,"fta":1,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":1,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"8561b0ed-c594-4d97-8e15-d231eba2ca81","n":"Kiki Fleuren","t":"AMS","j":"5"},{"pts":8,"pv":9.1,"p1m":8,"p1a":9,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":1,"reb":4,"oreb":2,"dreb":2,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"2737ee75-c5ed-4f29-ac97-3cd31b22ee38","n":"Marie Milapie","t":"FRA","j":"13"},{"pts":4,"pv":7.5,"p1m":2,"p1a":3,"p2m":1,"p2a":1,"ftm":0,"fta":0,"kast":1,"drv":1,"hl":2,"reb":7,"oreb":2,"dreb":5,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"5b449718-1a08-4ccc-a3ef-9ae9c055b6b9","n":"Marie-Eve Paget","t":"FRA","j":"5"},{"pts":1,"pv":-2.8,"p1m":0,"p1a":1,"p2m":0,"p2a":2,"ftm":1,"fta":2,"kast":1,"drv":0,"hl":1,"reb":2,"oreb":0,"dreb":2,"tov":5,"blk":0,"bb":0,"dnk":0,"id":"b17d586b-f5ed-4cba-b8a9-97922770ac01","n":"Marie Mané","t":"FRA","j":"1"},{"pts":5,"pv":10.2,"p1m":4,"p1a":8,"p2m":0,"p2a":2,"ftm":1,"fta":1,"kast":4,"drv":4,"hl":8,"reb":6,"oreb":0,"dreb":6,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"d1aa5c96-6383-43cb-b058-bdad3583c9db","n":"Laetitia Guapo","t":"FRA","j":"12"}],"mom":[[28.0,1,1],[44.5,1,2],[61.6,0,1],[91.2,0,1],[108.5,0,1],[115.1,1,1],[127.3,0,1],[161.3,0,1],[208.6,1,1],[229.1,0,1],[239.1,1,1],[256.7,1,1],[266.4,0,1],[275.1,0,1],[291.9,1,2],[333.1,0,1],[351.0,0,1],[358.7,1,1],[391.8,1,2],[422.5,0,2],[439.1,0,1],[474.4,0,1],[492.7,0,1],[501.3,1,2],[510.5,0,1],[516.7,1,1],[524.1,0,1],[547.0,0,1],[569.6,1,2],[588.5,1,1],[588.5,1,1]]},{"id":"7ff72f22-852c-44b6-87df-dd5b04e95675","date":"2026-06-27","time":"20:10","name":"Quarter-Final game 2","group":"Quarter-Finals","round":"L8","ot":false,"forfeit":false,"full":true,"h":"AUS","a":"BEI","hs":21,"as":7,"teams":{"AUS":{"pts":21,"p1m":9,"p1a":16,"p2m":5,"p2a":12,"ftm":2,"fta":2,"oreb":7,"dreb":13,"reb":20,"kast":5,"drv":2,"hl":10,"tov":4,"blk":3,"poss":33,"fouls":7,"bb":0,"dnk":0},"BEI":{"pts":7,"p1m":3,"p1a":8,"p2m":1,"p2a":13,"ftm":2,"fta":4,"oreb":6,"dreb":6,"reb":12,"kast":1,"drv":2,"hl":3,"tov":7,"blk":0,"poss":30,"fouls":8,"bb":0,"dnk":0}},"players":[{"pts":1,"pv":1.7000000000000002,"p1m":1,"p1a":3,"p2m":0,"p2a":3,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":3,"oreb":1,"dreb":2,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"f6fb7b33-82b3-4abd-8b0d-68ccbab1e068","n":"Xuemeng Wang","t":"BEI","j":"18"},{"pts":3,"pv":3.6,"p1m":0,"p1a":1,"p2m":1,"p2a":5,"ftm":1,"fta":2,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"09dc8674-ba8a-4eda-97ca-4c75f245cfaa","n":"FengYi Sun","t":"BEI","j":"9"},{"pts":2,"pv":-1.8,"p1m":1,"p1a":1,"p2m":0,"p2a":3,"ftm":1,"fta":2,"kast":0,"drv":0,"hl":0,"reb":1,"oreb":1,"dreb":0,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"820df89b-995f-4725-b529-7f6c1e41892c","n":"ZhiTing Zhang","t":"BEI","j":"10"},{"pts":1,"pv":1.2000000000000002,"p1m":1,"p1a":3,"p2m":0,"p2a":2,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":2,"oreb":1,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"aeab2aef-947d-4a18-b3dd-863ab8a8ed5c","n":"Wanglai Zhang","t":"BEI","j":"2"},{"pts":5,"pv":4.6,"p1m":5,"p1a":8,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":3,"oreb":2,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"0d5a8170-256e-42f3-b0c0-b53a0689e45e","n":"Hannah Hank","t":"AUS","j":"12"},{"pts":6,"pv":10,"p1m":2,"p1a":4,"p2m":2,"p2a":5,"ftm":0,"fta":0,"kast":3,"drv":1,"hl":6,"reb":6,"oreb":1,"dreb":5,"tov":3,"blk":2,"bb":0,"dnk":0,"id":"f17eb351-7e09-41ab-91c0-c062b4eb5543","n":"Emma Clarke","t":"AUS","j":"77"},{"pts":5,"pv":9.1,"p1m":1,"p1a":1,"p2m":2,"p2a":5,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":2,"reb":6,"oreb":1,"dreb":5,"tov":0,"blk":1,"bb":0,"dnk":0,"id":"ca2a5d9d-6705-4776-8c7c-296ef1d96c0a","n":"Marena Whittle","t":"AUS","j":"21"},{"pts":5,"pv":6.6,"p1m":1,"p1a":3,"p2m":1,"p2a":2,"ftm":2,"fta":2,"kast":1,"drv":1,"hl":2,"reb":2,"oreb":2,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"3c97eeef-a3d2-45c5-8ec5-d63206830b70","n":"Lauren Nicholson","t":"AUS","j":"1"}],"mom":[[12.0,1,1],[24.7,0,2],[52.5,0,2],[111.9,0,1],[136.2,0,1],[155.4,0,2],[162.6,1,1],[179.6,0,2],[202.0,1,2],[248.5,0,2],[271.2,0,1],[285.2,0,1],[290.7,1,1],[312.7,0,1],[336.3,0,1],[341.8,1,1],[355.1,0,1],[427.3,1,1],[458.2,0,1],[522.0,0,1],[559.5,0,1],[559.5,0,1]]},{"id":"64135051-c227-4f18-be1e-f00a9c7337cc","date":"2026-06-27","time":"20:40","name":"Quarter-Final game 3","group":"Quarter-Finals","round":"L8","ot":false,"forfeit":false,"full":true,"h":"CAN","a":"PRS","hs":21,"as":11,"teams":{"CAN":{"pts":21,"p1m":9,"p1a":13,"p2m":4,"p2a":9,"ftm":4,"fta":6,"oreb":1,"dreb":11,"reb":12,"kast":5,"drv":0,"hl":5,"tov":2,"blk":0,"poss":28,"fouls":5,"bb":0,"dnk":0},"PRS":{"pts":11,"p1m":5,"p1a":10,"p2m":3,"p2a":12,"ftm":0,"fta":1,"oreb":4,"dreb":9,"reb":13,"kast":2,"drv":2,"hl":4,"tov":6,"blk":0,"poss":29,"fouls":7,"bb":0,"dnk":0}},"players":[{"pts":5,"pv":4.1,"p1m":1,"p1a":3,"p2m":2,"p2a":3,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":2,"oreb":2,"dreb":0,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"c9b2832f-1267-4e82-beff-239cc74a60b7","n":"Eve Wembanyama","t":"PRS","j":"33"},{"pts":2,"pv":-0.4,"p1m":0,"p1a":0,"p2m":1,"p2a":7,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"0ab36c53-9621-4852-a2b9-844c51ff82c9","n":"Zoé Wadoux","t":"PRS","j":"17"},{"pts":3,"pv":4.3,"p1m":3,"p1a":4,"p2m":0,"p2a":2,"ftm":0,"fta":1,"kast":0,"drv":2,"hl":2,"reb":4,"oreb":0,"dreb":4,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"b177ac1c-49c0-4d4f-821d-d0209dd390f1","n":"Camille Droguet","t":"PRS","j":"7"},{"pts":1,"pv":3.3,"p1m":1,"p1a":3,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":6,"oreb":2,"dreb":4,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"3d6e4081-be1b-4907-85fc-c8a7e9620124","n":"Ana Tadic","t":"PRS","j":"15"},{"pts":7,"pv":5.9,"p1m":2,"p1a":3,"p2m":1,"p2a":3,"ftm":3,"fta":4,"kast":1,"drv":0,"hl":1,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"0fecae5b-390d-42fb-a9fa-026b521af651","n":"Merissah Russell","t":"CAN","j":"13"},{"pts":3,"pv":1.2999999999999998,"p1m":1,"p1a":3,"p2m":1,"p2a":2,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":3,"oreb":0,"dreb":3,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"9eb7223c-7989-4241-9032-21831e76a4ca","n":"Paige Crozon","t":"CAN","j":"7"},{"pts":6,"pv":8.2,"p1m":3,"p1a":3,"p2m":1,"p2a":3,"ftm":1,"fta":1,"kast":2,"drv":0,"hl":2,"reb":2,"oreb":0,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"c2e9db9b-8fe9-4cb8-98f8-e6d00480f24e","n":"Katherine Plouffe","t":"CAN","j":"2"},{"pts":5,"pv":7.6,"p1m":3,"p1a":4,"p2m":1,"p2a":1,"ftm":0,"fta":1,"kast":2,"drv":0,"hl":2,"reb":3,"oreb":1,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"25967055-a5a8-4776-b802-2bda89b992f1","n":"Cassandra Brown","t":"CAN","j":"22"}],"mom":[[7.2,0,1],[33.9,1,1],[47.2,0,2],[72.0,0,1],[87.1,1,2],[97.6,0,1],[120.2,0,1],[129.6,1,1],[143.2,0,1],[154.7,1,1],[214.9,1,2],[247.9,0,2],[285.1,0,1],[295.1,0,1],[311.1,0,2],[320.5,1,1],[326.1,0,1],[382.9,0,1],[392.2,1,1],[402.8,0,1],[409.7,0,1],[431.9,0,1],[431.9,0,1],[480.9,1,2],[507.6,0,2]]},{"id":"000b0080-736f-4290-b63f-4d2c07ce0eca","date":"2026-06-27","time":"21:10","name":"Quarter-Final game 4","group":"Quarter-Finals","round":"L8","ot":false,"forfeit":false,"full":true,"h":"EGY","a":"OTT","hs":17,"as":20,"teams":{"EGY":{"pts":17,"p1m":9,"p1a":21,"p2m":4,"p2a":7,"ftm":0,"fta":2,"oreb":5,"dreb":7,"reb":12,"kast":1,"drv":5,"hl":6,"tov":6,"blk":0,"poss":36,"fouls":6,"bb":0,"dnk":0},"OTT":{"pts":20,"p1m":10,"p1a":21,"p2m":3,"p2a":6,"ftm":4,"fta":5,"oreb":8,"dreb":11,"reb":19,"kast":6,"drv":4,"hl":12,"tov":6,"blk":2,"poss":37,"fouls":6,"bb":0,"dnk":0}},"players":[{"pts":2,"pv":6.8,"p1m":1,"p1a":2,"p2m":0,"p2a":2,"ftm":1,"fta":1,"kast":4,"drv":0,"hl":4,"reb":6,"oreb":1,"dreb":5,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"30b4a5e9-fec4-43f0-92f6-00d43208cf7c","n":"Jade Belmore","t":"OTT","j":"12"},{"pts":8,"pv":10.5,"p1m":6,"p1a":10,"p2m":0,"p2a":0,"ftm":2,"fta":3,"kast":0,"drv":2,"hl":3,"reb":7,"oreb":3,"dreb":4,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"64e95761-a30d-4701-bb93-0eab70435323","n":"Saicha Grant-Allen","t":"OTT","j":"77"},{"pts":4,"pv":3.7,"p1m":0,"p1a":2,"p2m":2,"p2a":3,"ftm":0,"fta":0,"kast":2,"drv":0,"hl":2,"reb":3,"oreb":2,"dreb":1,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"1b4db9a0-289e-48ed-b43e-2f8aa19bc31f","n":"Kacie Bosch","t":"OTT","j":"4"},{"pts":6,"pv":7,"p1m":3,"p1a":7,"p2m":1,"p2a":1,"ftm":1,"fta":1,"kast":0,"drv":2,"hl":3,"reb":2,"oreb":2,"dreb":0,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"67cafc45-602b-44d6-9a57-5dd952a7afca","n":"Niyah Becker","t":"OTT","j":"14"},{"pts":5,"pv":2.2,"p1m":3,"p1a":8,"p2m":1,"p2a":1,"ftm":0,"fta":2,"kast":0,"drv":1,"hl":1,"reb":6,"oreb":1,"dreb":5,"tov":4,"blk":0,"bb":0,"dnk":0,"id":"fb317130-2d89-4ec5-b587-17c54b56f111","n":"Raneem Mohamed","t":"EGY","j":"15"},{"pts":2,"pv":3.5,"p1m":2,"p1a":4,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":1,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"d07f127f-61ce-4d68-9503-dce6bd87f461","n":"Hala ElShaarawy","t":"EGY","j":"23"},{"pts":0,"pv":0.5,"p1m":0,"p1a":2,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":1,"oreb":0,"dreb":1,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"3a3f18fa-50ea-4121-b8d8-c04682882ff8","n":"Soraya Mohamed","t":"EGY","j":"8"},{"pts":10,"pv":10.7,"p1m":4,"p1a":7,"p2m":3,"p2a":6,"ftm":0,"fta":0,"kast":1,"drv":3,"hl":4,"reb":0,"oreb":0,"dreb":0,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"2b67e299-89bd-4e3e-a677-852e0428a0ad","n":"Nadine Selaawy","t":"EGY","j":"7"}],"mom":[[12.0,1,1],[19.9,0,1],[25.1,1,1],[42.0,1,1],[51.1,0,1],[56.8,1,1],[70.8,1,1],[88.4,1,1],[130.1,0,1],[138.7,1,1],[144.0,0,2],[155.1,1,2],[190.4,0,1],[198.3,1,1],[205.0,0,1],[218.1,0,2],[228.4,1,1],[296.3,1,2],[306.6,0,2],[331.8,1,2],[363.0,0,1],[382.9,1,1],[398.2,0,1],[409.8,1,1],[436.0,1,1],[451.9,1,1],[511.2,0,1],[522.0,0,2],[547.1,1,1],[581.0,0,1]]},{"id":"ca0b1241-deff-46b5-9c61-f2c3e213c341","date":"2026-06-27","time":"21:45","name":"Semi-Final game 1","group":"Semi-Finals","round":"SF","ot":false,"forfeit":false,"full":true,"h":"AMS","a":"AUS","hs":16,"as":21,"teams":{"AMS":{"pts":16,"p1m":3,"p1a":12,"p2m":4,"p2a":13,"ftm":5,"fta":5,"oreb":4,"dreb":7,"reb":11,"kast":0,"drv":3,"hl":3,"tov":9,"blk":0,"poss":37,"fouls":8,"bb":0,"dnk":0},"AUS":{"pts":21,"p1m":16,"p1a":26,"p2m":1,"p2a":3,"ftm":3,"fta":3,"oreb":5,"dreb":14,"reb":19,"kast":6,"drv":5,"hl":13,"tov":7,"blk":2,"poss":38,"fouls":8,"bb":0,"dnk":0}},"players":[{"pts":11,"pv":10.6,"p1m":10,"p1a":11,"p2m":0,"p2a":0,"ftm":1,"fta":1,"kast":0,"drv":1,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"0d5a8170-256e-42f3-b0c0-b53a0689e45e","n":"Hannah Hank","t":"AUS","j":"12"},{"pts":5,"pv":7.1,"p1m":3,"p1a":5,"p2m":0,"p2a":1,"ftm":2,"fta":2,"kast":2,"drv":2,"hl":4,"reb":4,"oreb":1,"dreb":3,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"ca2a5d9d-6705-4776-8c7c-296ef1d96c0a","n":"Marena Whittle","t":"AUS","j":"21"},{"pts":2,"pv":6.199999999999999,"p1m":0,"p1a":4,"p2m":1,"p2a":2,"ftm":0,"fta":0,"kast":3,"drv":0,"hl":4,"reb":7,"oreb":0,"dreb":7,"tov":2,"blk":1,"bb":0,"dnk":0,"id":"f17eb351-7e09-41ab-91c0-c062b4eb5543","n":"Emma Clarke","t":"AUS","j":"77"},{"pts":3,"pv":7,"p1m":3,"p1a":6,"p2m":0,"p2a":0,"ftm":0,"fta":0,"kast":1,"drv":2,"hl":4,"reb":3,"oreb":0,"dreb":3,"tov":0,"blk":1,"bb":0,"dnk":0,"id":"3c97eeef-a3d2-45c5-8ec5-d63206830b70","n":"Lauren Nicholson","t":"AUS","j":"1"},{"pts":4,"pv":2.5,"p1m":1,"p1a":5,"p2m":1,"p2a":2,"ftm":1,"fta":1,"kast":0,"drv":1,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"6ab9bab6-4246-46ed-a6cc-10a03aa93a89","n":"Keona Douwstra","t":"AMS","j":"6"},{"pts":4,"pv":-1,"p1m":0,"p1a":3,"p2m":1,"p2a":3,"ftm":2,"fta":2,"kast":0,"drv":0,"hl":0,"reb":2,"oreb":0,"dreb":2,"tov":4,"blk":0,"bb":0,"dnk":0,"id":"8561b0ed-c594-4d97-8e15-d231eba2ca81","n":"Kiki Fleuren","t":"AMS","j":"5"},{"pts":8,"pv":4.6,"p1m":2,"p1a":4,"p2m":2,"p2a":8,"ftm":2,"fta":2,"kast":0,"drv":2,"hl":2,"reb":2,"oreb":0,"dreb":2,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"9d33398d-fc76-4d9d-8058-d623a7f2c4ac","n":"Liselot Kulk","t":"AMS","j":"10"}],"mom":[[14.7,1,1],[27.5,1,1],[43.6,0,2],[52.6,1,1],[59.1,0,1],[110.9,0,2],[123.4,1,1],[138.1,1,1],[193.6,1,1],[217.3,1,1],[224.0,1,1],[232.6,0,2],[244.1,1,1],[248.5,0,1],[267.8,1,1],[294.4,1,1],[308.2,0,1],[370.3,1,1],[376.9,0,1],[390.1,0,2],[398.2,1,1],[413.3,1,1],[428.0,1,2],[434.4,1,1],[434.4,1,1],[460.7,0,1],[460.7,0,1],[502.1,1,1],[527.5,0,1],[527.5,0,1],[539.8,1,1],[554.6,1,1]]},{"id":"99fac09d-093c-4817-be73-9a90590923ac","date":"2026-06-27","time":"22:15","name":"Semi-Final game 2","group":"Semi-Finals","round":"SF","ot":true,"forfeit":false,"full":true,"h":"CAN","a":"OTT","hs":17,"as":16,"teams":{"CAN":{"pts":17,"p1m":11,"p1a":18,"p2m":1,"p2a":9,"ftm":4,"fta":5,"oreb":6,"dreb":10,"reb":16,"kast":7,"drv":0,"hl":9,"tov":8,"blk":1,"poss":40,"fouls":8,"bb":1,"dnk":0},"OTT":{"pts":16,"p1m":10,"p1a":18,"p2m":1,"p2a":10,"ftm":4,"fta":6,"oreb":8,"dreb":10,"reb":18,"kast":4,"drv":3,"hl":7,"tov":10,"blk":0,"poss":42,"fouls":6,"bb":0,"dnk":0}},"players":[{"pts":5,"pv":4.8,"p1m":4,"p1a":8,"p2m":0,"p2a":2,"ftm":1,"fta":1,"kast":0,"drv":0,"hl":0,"reb":9,"oreb":4,"dreb":5,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"64e95761-a30d-4701-bb93-0eab70435323","n":"Saicha Grant-Allen","t":"OTT","j":"77"},{"pts":6,"pv":8,"p1m":3,"p1a":3,"p2m":1,"p2a":1,"ftm":1,"fta":2,"kast":0,"drv":2,"hl":2,"reb":4,"oreb":1,"dreb":3,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"30b4a5e9-fec4-43f0-92f6-00d43208cf7c","n":"Jade Belmore","t":"OTT","j":"12"},{"pts":4,"pv":3.4000000000000004,"p1m":3,"p1a":7,"p2m":0,"p2a":2,"ftm":1,"fta":2,"kast":2,"drv":1,"hl":3,"reb":2,"oreb":1,"dreb":1,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"67cafc45-602b-44d6-9a57-5dd952a7afca","n":"Niyah Becker","t":"OTT","j":"14"},{"pts":1,"pv":-0.2999999999999998,"p1m":0,"p1a":0,"p2m":0,"p2a":5,"ftm":1,"fta":1,"kast":2,"drv":0,"hl":2,"reb":1,"oreb":1,"dreb":0,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"1b4db9a0-289e-48ed-b43e-2f8aa19bc31f","n":"Kacie Bosch","t":"OTT","j":"4"},{"pts":5,"pv":4.5,"p1m":2,"p1a":5,"p2m":1,"p2a":3,"ftm":1,"fta":2,"kast":1,"drv":0,"hl":2,"reb":2,"oreb":1,"dreb":1,"tov":1,"blk":0,"bb":1,"dnk":0,"id":"9eb7223c-7989-4241-9032-21831e76a4ca","n":"Paige Crozon","t":"CAN","j":"7"},{"pts":4,"pv":3.3,"p1m":3,"p1a":5,"p2m":0,"p2a":3,"ftm":1,"fta":1,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":1,"blk":0,"bb":0,"dnk":0,"id":"25967055-a5a8-4776-b802-2bda89b992f1","n":"Cassandra Brown","t":"CAN","j":"22"},{"pts":4,"pv":2.7,"p1m":2,"p1a":2,"p2m":0,"p2a":2,"ftm":2,"fta":2,"kast":2,"drv":0,"hl":2,"reb":2,"oreb":0,"dreb":2,"tov":3,"blk":0,"bb":0,"dnk":0,"id":"0fecae5b-390d-42fb-a9fa-026b521af651","n":"Merissah Russell","t":"CAN","j":"13"},{"pts":4,"pv":8.8,"p1m":4,"p1a":6,"p2m":0,"p2a":1,"ftm":0,"fta":0,"kast":3,"drv":0,"hl":4,"reb":7,"oreb":2,"dreb":5,"tov":1,"blk":1,"bb":0,"dnk":0,"id":"c2e9db9b-8fe9-4cb8-98f8-e6d00480f24e","n":"Katherine Plouffe","t":"CAN","j":"2"}],"mom":[[32.2,1,1],[54.2,0,1],[74.5,0,1],[84.3,1,1],[112.5,0,1],[142.8,0,2],[172.6,1,1],[187.2,0,1],[207.1,0,1],[225.6,0,1],[237.6,1,1],[276.6,1,1],[287.9,0,1],[297.5,1,1],[310.6,0,1],[320.0,1,1],[326.8,0,1],[339.1,0,1],[350.3,1,1],[356.4,0,1],[437.7,1,1],[464.0,1,1],[474.6,1,1],[490.3,0,1],[515.2,1,2],[539.2,1,1],[550.3,0,1],[587.1,1,1],[615,1,1],[630,0,1],[645,0,1]]},{"id":"f4295b56-d81a-4179-a1bf-a010b1bfcf99","date":"2026-06-27","time":"23:15","name":"Final","group":"Final","round":"F","ot":true,"forfeit":false,"full":true,"h":"AUS","a":"CAN","hs":20,"as":19,"teams":{"AUS":{"pts":20,"p1m":7,"p1a":15,"p2m":5,"p2a":7,"ftm":3,"fta":4,"oreb":3,"dreb":12,"reb":15,"kast":4,"drv":1,"hl":7,"tov":12,"blk":1,"poss":36,"fouls":8,"bb":1,"dnk":0},"CAN":{"pts":19,"p1m":8,"p1a":23,"p2m":4,"p2a":9,"ftm":3,"fta":4,"oreb":9,"dreb":8,"reb":17,"kast":3,"drv":3,"hl":6,"tov":6,"blk":0,"poss":41,"fouls":8,"bb":0,"dnk":0}},"players":[{"pts":2,"pv":1,"p1m":0,"p1a":2,"p2m":1,"p2a":2,"ftm":0,"fta":0,"kast":0,"drv":0,"hl":0,"reb":0,"oreb":0,"dreb":0,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"25967055-a5a8-4776-b802-2bda89b992f1","n":"Cassandra Brown","t":"CAN","j":"22"},{"pts":3,"pv":-0.10000000000000009,"p1m":2,"p1a":8,"p2m":0,"p2a":1,"ftm":1,"fta":1,"kast":0,"drv":1,"hl":1,"reb":4,"oreb":2,"dreb":2,"tov":4,"blk":0,"bb":0,"dnk":0,"id":"0fecae5b-390d-42fb-a9fa-026b521af651","n":"Merissah Russell","t":"CAN","j":"13"},{"pts":3,"pv":6.9,"p1m":3,"p1a":8,"p2m":0,"p2a":1,"ftm":0,"fta":1,"kast":3,"drv":1,"hl":4,"reb":8,"oreb":4,"dreb":4,"tov":2,"blk":0,"bb":0,"dnk":0,"id":"c2e9db9b-8fe9-4cb8-98f8-e6d00480f24e","n":"Katherine Plouffe","t":"CAN","j":"2"},{"pts":11,"pv":12.6,"p1m":3,"p1a":5,"p2m":3,"p2a":5,"ftm":2,"fta":2,"kast":0,"drv":1,"hl":1,"reb":3,"oreb":1,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"9eb7223c-7989-4241-9032-21831e76a4ca","n":"Paige Crozon","t":"CAN","j":"7"},{"pts":3,"pv":1,"p1m":2,"p1a":4,"p2m":0,"p2a":0,"ftm":1,"fta":2,"kast":0,"drv":0,"hl":1,"reb":3,"oreb":1,"dreb":2,"tov":3,"blk":0,"bb":1,"dnk":0,"id":"0d5a8170-256e-42f3-b0c0-b53a0689e45e","n":"Hannah Hank","t":"AUS","j":"12"},{"pts":8,"pv":10.1,"p1m":2,"p1a":3,"p2m":2,"p2a":2,"ftm":2,"fta":2,"kast":1,"drv":0,"hl":2,"reb":6,"oreb":0,"dreb":6,"tov":4,"blk":1,"bb":0,"dnk":0,"id":"f17eb351-7e09-41ab-91c0-c062b4eb5543","n":"Emma Clarke","t":"AUS","j":"77"},{"pts":6,"pv":7.6,"p1m":2,"p1a":6,"p2m":2,"p2a":4,"ftm":0,"fta":0,"kast":2,"drv":1,"hl":3,"reb":2,"oreb":0,"dreb":2,"tov":0,"blk":0,"bb":0,"dnk":0,"id":"ca2a5d9d-6705-4776-8c7c-296ef1d96c0a","n":"Marena Whittle","t":"AUS","j":"21"},{"pts":3,"pv":1.5,"p1m":1,"p1a":2,"p2m":1,"p2a":1,"ftm":0,"fta":0,"kast":1,"drv":0,"hl":1,"reb":3,"oreb":2,"dreb":1,"tov":4,"blk":0,"bb":0,"dnk":0,"id":"3c97eeef-a3d2-45c5-8ec5-d63206830b70","n":"Lauren Nicholson","t":"AUS","j":"1"}],"mom":[[11.4,1,1],[22.0,0,2],[78.0,1,1],[90.8,1,2],[100.3,0,1],[114.9,0,1],[164.8,1,1],[212.5,1,1],[234.0,0,2],[238.5,1,2],[255.1,0,1],[266.6,1,1],[293.2,0,1],[316.8,0,1],[328.0,0,1],[328.0,0,1],[359.7,0,1],[366.7,1,1],[376.5,0,2],[394.9,1,2],[400.5,1,1],[400.5,1,1],[474.1,1,1],[497.2,1,2],[535.8,0,2],[552.7,0,2],[567.1,1,1],[615,1,1],[630,0,1],[645,0,1]]}],"standings":[{"t":"AUS","rank":1},{"t":"CAN","rank":2},{"t":"AMS","rank":3},{"t":"OTT","rank":4},{"t":"EGY","rank":5},{"t":"FRA","rank":6},{"t":"PRS","rank":7},{"t":"BEI","rank":8},{"t":"RAP","rank":9},{"t":"POL","rank":10},{"t":"NEF","rank":11},{"t":"HUN","rank":12},{"t":"UGA","rank":13},{"t":"BEN","rank":14},{"t":"ROM","rank":15},{"t":"AZE","rank":16}],"stages":{"QD":"Qualifying Draw","RR":"Pool","L16":"Round of 16","L8":"Quarter-Final","SF":"Semi-Final","MSF":"Third Place","3P":"Third Place","F":"Final"},"fetchedAt":"2026-11-13T20:18:17.668Z","event":{"name":"FIBA 3x3 Women's Series Poitiers Stop 2026","title":"FIBA 3x3 Women's Series Poitiers Stop 2026","series":"Women's Series","category":"Women","place":"Poitiers, France","dates":"26 – 27 Jun 2026","site":"https://womensseries.fiba3x3.com/2026/poitiers"}};
+const S = { day: 'all', team: 'all', ff: 'values', side: 'both', pl: 'pg', sort: 'pts', desc: true, plAll: false };
+const PLAYER_ROWS = 15;
+
+// ── helpers ─────────────────────────────────────────────
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const T = c => D.teams[c] || { name: c, flag: '', color: '#6b7280' };
+const flag = c => T(c).flag ? `<span class="fi fi-${T(c).flag}"></span>` : '';
+const tf = c => `<span class="team-flag">${flag(c)}${c}</span>`;
+const f1 = x => (x == null || !isFinite(x)) ? '–' : x.toFixed(1);
+const pct = x => (x == null || !isFinite(x)) ? '–' : (100 * x).toFixed(1);
+const signed = x => !isFinite(x) ? '–' : (x > 0 ? '+' : '') + x.toFixed(1);
+const div = (a, b) => b ? a / b : NaN;
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dlabel = d => `${MON[+d.slice(5, 7) - 1]} ${+d.slice(8, 10)}`;
+const rankOf = Object.fromEntries(D.standings.map(s => [s.t, s.rank]));
+const STAT_KEYS = ['pts','p1m','p1a','p2m','p2a','ftm','fta','oreb','dreb','reb','kast','drv','hl','tov','blk','poss','fouls','bb','dnk'];
+const sel = c => S.team !== 'all' && c === S.team;
+
+// The selection is Total Results or one game day.
+const onDay = g => S.day === 'all' || (g.date === S.day && g.round !== 'QD');
+const sides = g => onDay(g) ? [g.h, g.a] : [];
+const inSel = g => onDay(g);
+function games() { return D.games.filter(onDay); }
+function fullGames() { return games().filter(g => g.full); }
+const NO_FULL = `<div class="empty">No full box scores for this selection. Qualifying Draw games only record points and makes, so they appear under Standings and Scores.</div>`;
+
+// Sum each team's own and opponents' box scores over a set of games.
+function teamAgg(gs) {
+  const A = {};
+  for (const g of gs) for (const [me, op] of [[g.h, g.a], [g.a, g.h]]) {
+    const a = A[me] || (A[me] = { t: me, g: 0, w: 0, own: {}, opp: {} });
+    a.g++; if ((me === g.h ? g.hs : g.as) > (me === g.h ? g.as : g.hs)) a.w++;
+    for (const k of STAT_KEYS) {
+      a.own[k] = (a.own[k] || 0) + (g.teams[me][k] || 0);
+      a.opp[k] = (a.opp[k] || 0) + (g.teams[op][k] || 0);
+    }
+  }
+  for (const a of Object.values(A)) {
+    const o = a.own, p = a.opp;
+    a.ortg = 100 * div(o.pts, o.poss); a.drtg = 100 * div(p.pts, p.poss); a.net = a.ortg - a.drtg;
+    a.pace = div(o.poss + p.poss, 2 * a.g);
+    const f = (x, y) => ({ sv: div(x.p1m + 2 * x.p2m, x.p1a + x.p2a), or: div(x.oreb, x.oreb + y.dreb),
+                           ftr: div(x.fta, x.p1a + x.p2a), tov: div(x.tov, x.poss) });
+    a.off = f(o, p); a.def = f(p, o);
+    a.netf = { sv: a.off.sv - a.def.sv, or: a.off.or - a.def.or, ftr: a.off.ftr - a.def.ftr, tov: a.def.tov - a.off.tov };
+    // Shots a team gets beyond its opponent: offensive rebounds plus turnovers
+    // forced, less the same given up, per game.
+    a.extra = (o.oreb + p.tov - p.oreb - o.tov) / a.g;
+  }
+  return Object.values(A);
+}
+function zs(vals) {
+  const v = vals.filter(isFinite), m = v.reduce((s, x) => s + x, 0) / v.length;
+  const sd = Math.sqrt(v.reduce((s, x) => s + (x - m) ** 2, 0) / v.length) || 1;
+  return vals.map(x => (x - m) / sd);
+}
+// Red is better, blue is worse — the 5x5 dashboard's heat scale.
+function heat(z) {
+  if (!isFinite(z)) return '';
+  const a = Math.min(Math.abs(z), 2) / 2 * .55;
+  return `background:${z > 0 ? `rgba(216,6,33,${a})` : `rgba(37,99,235,${a})`}`;
+}
+
+// ── header + nav ────────────────────────────────────────
+function header() {
+  const ev = D.event, fin = D.games.find(g => g.round === 'F');
+  document.title = `${ev.title} | Canada Basketball`;
+  document.getElementById('title').textContent = ev.title;
+  document.getElementById('sub').textContent = `${ev.dates} · ${ev.place}`;
+  const champ = fin ? (fin.hs > fin.as ? fin.h : fin.a) : null;
+  document.getElementById('stamp').innerHTML = champ ? `Final · Champion <b>${champ}</b>` : 'In progress';
+  // Qualifying Draw days only have points and makes, so they have no tab of
+  // their own; their games still count on Total Results.
+  const dates = [...new Set(D.games.filter(g => g.round !== 'QD').map(g => g.date))];
+  const stagesOn = d => [...new Set(D.games.filter(g => g.date === d && g.round !== 'QD').map(g => STAGE_DAY[g.round] || g.group))].join(' · ');
+  const nav = document.getElementById('dates');
+  nav.innerHTML = `<button class="date-tab date-tab--all" data-d="all">Total Results</button>` +
+    dates.map(d => `<button class="date-tab" data-d="${d}">${dlabel(d)}<small>${stagesOn(d)}</small></button>`).join('');
+  nav.onclick = e => { const b = e.target.closest('.date-tab'); if (b) { S.day = b.dataset.d; render(); } };
+  const ts = document.getElementById('team');
+  const order = Object.keys(D.teams).sort((a, b) => (rankOf[a] || 99) - (rankOf[b] || 99));
+  ts.innerHTML = `<option value="all">All teams</option>` + order.map(c => `<option value="${c}">${c} — ${esc(T(c).name)}</option>`).join('');
+  ts.onchange = () => { S.team = ts.value; render(); };
+  const seg = (id, key) => document.getElementById(id).onclick = e => {
+    const b = e.target.closest('button'); if (!b) return; S[key] = b.dataset.v;
+    [...b.parentNode.children].forEach(x => x.classList.toggle('on', x === b)); render();
+  };
+  seg('ff-mode', 'ff'); seg('ff-side', 'side'); seg('pl-mode', 'pl');
+  const links = [...document.querySelectorAll('.section-nav-item')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) links.forEach(l => l.classList.toggle('current', l.getAttribute('href') === '#' + en.target.id));
+    }), { rootMargin: '-45% 0px -50% 0px' });
+    document.querySelectorAll('.zone').forEach(z => io.observe(z));
+  }
+}
+
+// ── KPIs ────────────────────────────────────────────────
+function kpis() {
+  const gs = games(), agg = teamAgg(fullGames());
+  const lines = gs.flatMap(g => sides(g).map(c => c === g.h ? g.hs : g.as));
+  const pts = lines.reduce((s, x) => s + x, 0);
+  const teams = new Set(gs.flatMap(sides));
+  const qualified = agg.filter(a => a.g >= Math.min(2, Math.max(...agg.map(x => x.g))));
+  const bestO = qualified.slice().sort((a, b) => b.ortg - a.ortg)[0];
+  const bestD = qualified.slice().sort((a, b) => a.drtg - b.drtg)[0];
+  const pace = agg.length ? agg.reduce((s, a) => s + a.pace * a.g, 0) / agg.reduce((s, a) => s + a.g, 0) : NaN;
+  const P = {};
+  for (const g of gs) for (const p of g.players) { const r = P[p.id] || (P[p.id] = { n: p.n, t: p.t, pts: 0 }); r.pts += p.pts; }
+  const top = Object.values(P).sort((a, b) => b.pts - a.pts)[0];
+  const tile = (label, value, sub, color) => `<div class="kpi" style="--kpi-accent:${color || 'var(--accent)'}"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+  document.getElementById('kpis').innerHTML =
+    tile('Games played', gs.length, `${teams.size} teams · ${gs.filter(g => g.full).length} with full box scores`) +
+    tile('Points / team', f1(div(pts, lines.length)), 'average per game, first to 21 wins', '#0d9488') +
+    tile('Pace', f1(pace), 'possessions per team per game', '#2563eb') +
+    tile('Best offence', bestO ? `${flag(bestO.t)}${f1(bestO.ortg)}` : '–', bestO ? `${bestO.t} · points scored per 100 possessions` : 'no full box scores', '#16a34a') +
+    tile('Best defence', bestD ? `${flag(bestD.t)}${f1(bestD.drtg)}` : '–', bestD ? `${bestD.t} · points allowed per 100 possessions` : 'no full box scores', '#6b7280') +
+    tile('Top scorer', top ? `${top.pts} <small>PTS</small>` : '–', top ? `${esc(top.n)} · ${top.t}` : '', '#ca8a04');
+}
+
+// ── four factors ────────────────────────────────────────
+function factors() {
+  const el = document.getElementById('ff'), agg = teamAgg(fullGames());
+  if (!agg.length) { el.innerHTML = NO_FULL; return; }
+  const cols = [
+    ['off','sv',1,'SV',f1v=>f1v.toFixed(2)], ['off','or',1,'OREB%',pct], ['off','ftr',1,'FTR',pct], ['off','tov',-1,'TOV%',pct],
+    ['def','sv',-1,'SV',x=>x.toFixed(2)], ['def','or',-1,'OREB%',pct], ['def','ftr',-1,'FTR',pct], ['def','tov',1,'TOV%',pct],
+    ['netf','sv',1,'SV',x=>(x>0?'+':'')+x.toFixed(2)], ['netf','or',1,'OREB%',x=>signed(100*x)], ['netf','ftr',1,'FTR',x=>signed(100*x)], ['netf','tov',1,'TOV%',x=>signed(100*x)],
+  ];
+  const Z = cols.map(([g, k, dir]) => zs(agg.map(a => a[g][k])).map(z => z * dir));
+  agg.forEach((a, i) => { a.z = cols.map((_, c) => Z[c][i]); a.score = a.z.slice(8).reduce((s, z) => s + z, 0); });
+  const proj = agg.slice().sort((a, b) => b.score - a.score); proj.forEach((a, i) => a.proj = i + 1);
+  const placed = agg.slice().sort((a, b) => (rankOf[a.t] || 99) - (rankOf[b.t] || 99)); placed.forEach((a, i) => a.placed = i + 1);
+  // Offensive / Defensive / Both, as on the 5x5 page. Net and the ranking
+  // always show: the projection is built from the net factors.
+  const shown = cols.map((_, c) => c >= 8 || S.side === 'both' || (S.side === 'off' ? c < 4 : c >= 4));
+  const groups = [['Offense', 0], ['Defense', 4], ['Net', 8]].filter(([, s]) => shown[s]);
+  const me = c => c === (S.team === 'all' ? 'CAN' : S.team);
+  const cell = (a, c) => { const [g, k, , , fmt] = cols[c], z = a.z[c];
+    return `<td class="zc${c % 4 === 0 ? ' gs' : ''}" style="background:${zFill(z)};color:${zInk(z)}">${S.ff === 'z' ? signed(z) : fmt(a[g][k])}</td>`; };
+  const rows = proj.map(a => {
+    const diff = a.proj - a.placed;
+    return `<tr class="${me(a.t) ? 'me' : ''}" style="background:${teamTint(a.t)};box-shadow:inset 3px 0 0 ${T(a.t).color}">
+      <td>${tf(a.t)}</td>${cols.map((_, c) => shown[c] ? cell(a, c) : '').join('')}
+      <td class="gs">${a.proj}</td><td>${a.placed}</td><td>${diff > 0 ? '+' : ''}${diff}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<div class="ff-layout">
+    <div>
+      <div class="ff-scroll"><table class="ff-tbl"><thead>
+        <tr class="grp"><th></th>${groups.map(([l]) => `<th class="gs" colspan="4">${l}</th>`).join('')}<th class="gs" colspan="3">Ranking</th></tr>
+        <tr><th>Team</th>${cols.map((c, i) => shown[i] ? `<th class="${i % 4 === 0 ? 'gs' : ''}">${c[3]}</th>` : '').join('')}
+          <th class="gs" title="Order by total net z-score">Proj.</th><th title="Where the team actually finished">Placed</th>
+          <th title="Projected rank minus placement: positive finished higher than the numbers said">Diff</th></tr>
+      </thead><tbody>${rows}</tbody></table></div>
+      <div class="ff-legend"><span>Worse</span><span class="sws">${ZCOL.map(c => `<span class="sw" style="background:${c}"></span>`).join('')}</span><span>Better</span></div>
+      <div class="ff-foot">— against the rest of this tournament, in standard deviations. On defence the factors are the opponent's, so conceding less is better.
+        SV is points per 1PT/2PT attempt, (1PM + 2×2PM) ÷ (1PA + 2PA). Main-draw games only.</div>
+    </div>
+    <div class="ff-right">
+      <div class="ff-chart-title">Extra possessions vs. shooting</div>
+      <div class="ff-chart-sub">Across: offensive rebounds plus turnovers forced, less the same given up, per game — how many more shots a team gets than its opponent. Up: how well it makes them. The dashed lines are the tournament average.</div>
+      ${possChart(agg)}
+    </div>
+  </div>`;
+}
+
+// The 5x5 dashboard's seven-step scale, team tint and z-score shading.
+const ZCOL = ['#1c5cab', '#3987e5', '#86b6ef', '#eceef1', '#eb8b89', '#e34948', '#a51f1f'];
+function zFill(z) {
+  if (z == null || !isFinite(z)) return 'transparent';
+  if (z <= -1.5) return ZCOL[0]; if (z <= -0.75) return ZCOL[1]; if (z <= -0.25) return ZCOL[2];
+  if (z < 0.25) return ZCOL[3];
+  if (z < 0.75) return ZCOL[4]; if (z < 1.5) return ZCOL[5]; return ZCOL[6];
+}
+function zInk(z) { return z != null && Math.abs(z) >= 1.5 ? '#fff' : 'var(--text)'; }
+function teamTint(code) {
+  const n = parseInt(T(code).color.slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `linear-gradient(90deg, rgba(${r},${g},${b},.22) 0%, rgba(${r},${g},${b},.08) 34%, rgba(${r},${g},${b},0) 68%)`;
+}
+
+// The 5x5 dashboard's renderPossChart, with 3x3's shot value (points per
+// 1PT/2PT attempt) on the vertical axis in place of eFG%.
+function possChart(agg) {
+  const pts = agg.filter(a => isFinite(a.extra) && isFinite(a.off.sv));
+  if (pts.length < 2) return '';
+  const W = 600, H = 500, L = 60, R = 18, Tp = 24, B = 58;
+  const xs = pts.map(a => a.extra), ys = pts.map(a => a.off.sv);
+  const pad = (lo, hi, p) => { const s = (hi - lo) || 1; return [lo - s * p, hi + s * p]; };
+  const [x0, x1] = pad(Math.min(...xs), Math.max(...xs), .12), [y0, y1] = pad(Math.min(...ys), Math.max(...ys), .12);
+  const X = v => L + (v - x0) / (x1 - x0) * (W - L - R), Y = v => Tp + (y1 - v) / (y1 - y0) * (H - Tp - B);
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length, mx = mean(xs), my = mean(ys);
+  const ticks = (lo, hi, k) => { const raw = (hi - lo) / k, m = 10 ** Math.floor(Math.log10(raw));
+    const step = [1, 2, 5, 10].map(f => f * m).find(s => s >= raw), out = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) out.push(+v.toFixed(6)); return out; };
+  const xt = ticks(x0, x1, 6), yt = ticks(y0, y1, 6);
+  const focus = S.team === 'all' ? 'CAN' : S.team;
+  return `<svg class="poss-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter of extra possessions per game against points per shot, one point per team">
+    <g class="grid">${xt.map(v => `<line x1="${X(v)}" x2="${X(v)}" y1="${Tp}" y2="${H - B}"></line>`).join('')}
+      ${yt.map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"></line>`).join('')}</g>
+    ${xt.map(v => `<text class="tick" x="${X(v)}" y="${H - B + 18}" text-anchor="middle">${v > 0 ? '+' : ''}${v}</text>`).join('')}
+    ${yt.map(v => `<text class="tick" x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${v.toFixed(2)}</text>`).join('')}
+    <line class="axis" x1="${X(mx)}" x2="${X(mx)}" y1="${Tp}" y2="${H - B}"></line>
+    <line class="axis" x1="${L}" x2="${W - R}" y1="${Y(my)}" y2="${Y(my)}"></line>
+    <text class="quad" x="${W - R - 6}" y="${Tp + 14}" text-anchor="end">More shots, better shooting</text>
+    <text class="quad" x="${L + 6}" y="${H - B - 8}">Fewer shots, worse shooting</text>
+    <text class="alab" x="${(L + W - R) / 2}" y="${H - 12}" text-anchor="middle">Extra possessions per game (OREB + TOV forced − opp OREB − TOV)</text>
+    <text class="alab" transform="translate(16 ${(Tp + H - B) / 2}) rotate(-90)" text-anchor="middle">Shot value (points per 1PT/2PT attempt)</text>
+    ${pts.map(a => {
+      const me = a.t === focus, cx = X(a.extra), cy = Y(a.off.sv), right = cx < W - R - 60;
+      const fw = me ? 34 : 26, fh = fw * 3 / 4, off = fw / 2 + 5;
+      const mark = T(a.t).flag
+        ? `<foreignObject x="${cx - fw / 2}" y="${cy - fh / 2}" width="${fw}" height="${fh}"><div xmlns="http://www.w3.org/1999/xhtml" class="flag-mark" style="height:${fh}px">${flag(a.t)}</div></foreignObject>`
+        : `<circle cx="${cx}" cy="${cy}" r="${me ? 10 : 7}" fill="${T(a.t).color}" stroke="#fff" stroke-width="2"></circle>`;
+      return `<g class="${S.team !== 'all' && !me ? 'dim' : ''}"><title>${esc(T(a.t).name)}: ${a.extra > 0 ? '+' : ''}${a.extra.toFixed(1)} possessions/game, ${a.off.sv.toFixed(2)} points per shot</title>
+        ${mark}<text class="lbl" x="${cx + (right ? off : -off)}" y="${cy + 4}" text-anchor="${right ? 'start' : 'end'}">${a.t}</text></g>`;
+    }).join('')}
+  </svg>`;
+}
+
+// ── efficiency quadrant ─────────────────────────────────
+function efficiency() {
+  const el = document.getElementById('eff'), agg = teamAgg(fullGames()).filter(a => isFinite(a.ortg) && isFinite(a.drtg));
+  if (!agg.length) { el.innerHTML = NO_FULL; return; }
+  const all = fullGames(); let pts = 0, poss = 0;
+  all.forEach(g => sides(g).forEach(c => { pts += g.teams[c].pts; poss += g.teams[c].poss; }));
+  const avg = 100 * pts / poss;
+  const xs = agg.map(a => a.ortg), ys = agg.map(a => a.drtg);
+  // Each axis gets its own span around the average, so one outlier on defence
+  // doesn't squash the offensive spread (and the average lines stay centred).
+  const sx = Math.max(...xs.map(x => Math.abs(x - avg)), 5) * 1.15, sy = Math.max(...ys.map(y => Math.abs(y - avg)), 5) * 1.15;
+  const lo = avg - sx, hi = avg + sx, ylo = avg - sy, yhi = avg + sy;
+  const X = v => 100 * (v - lo) / (hi - lo), Y = v => 100 * (v - ylo) / (yhi - ylo); // lower DRtg sits higher
+  const dots = agg.map(a => `<div class="quad-dot ${S.team === 'all' ? '' : sel(a.t) ? 'hi' : 'dim'}" style="left:${X(a.ortg)}%;top:${Y(a.drtg)}%" title="${esc(T(a.t).name)}: ${f1(a.ortg)} scored, ${f1(a.drtg)} allowed">${flag(a.t)}<b>${a.t}</b></div>`).join('');
+  const tbl = agg.slice().sort((a, b) => b.net - a.net).map(a => `<tr class="${sel(a.t) ? 'sel' : ''}"><td>${tf(a.t)}</td><td>${f1(a.ortg)}</td><td>${f1(a.drtg)}</td><td class="${a.net >= 0 ? 'pos' : 'neg'}">${signed(a.net)}</td></tr>`).join('');
+  el.innerHTML = `<div class="chart-wrap"><div class="quad"><div class="quad-plot">
+      <div class="quad-fill good" style="left:50%;right:0;top:0;bottom:50%"></div>
+      <div class="quad-fill bad" style="left:0;right:50%;top:50%;bottom:0"></div>
+      <div class="quad-mid" style="left:50%;top:0;bottom:0;width:1px"></div><div class="quad-mid" style="top:50%;left:0;right:0;height:1px"></div>
+      <span class="quad-corner tr">Good at both ends</span><span class="quad-corner bl">Struggling both ends</span>
+      <span class="quad-tick avg" style="left:50%;bottom:-18px;transform:translateX(-50%)">avg ${f1(avg)}</span>
+      <span class="quad-tick" style="left:0;bottom:-18px">${f1(lo)}</span><span class="quad-tick" style="right:0;bottom:-18px">${f1(hi)}</span>
+      <span class="quad-tick avg" style="left:-44px;top:50%;transform:translateY(-50%)">avg ${f1(avg)}</span>
+      <span class="quad-tick" style="left:-34px;top:0">${f1(ylo)}</span><span class="quad-tick" style="left:-34px;bottom:0">${f1(yhi)}</span>
+      ${dots}</div>
+      <span class="quad-axis x">Offensive rating (higher is better)</span><span class="quad-axis y">Defensive rating (lower is better)</span></div>
+    <div class="side-card"><div class="sub-h">Per 100 possessions</div><table class="t"><thead><tr><th>Team</th><th>Off</th><th>Def</th><th>Net</th></tr></thead><tbody>${tbl}</tbody></table>
+      <p class="note">Main-draw games only.</p></div></div>`;
+}
+
+// ── shooting ────────────────────────────────────────────
+function shooting() {
+  const el = document.getElementById('shooting'), agg = teamAgg(fullGames());
+  if (!agg.length) { el.innerHTML = NO_FULL; return; }
+  const rows = agg.sort((a, b) => b.own.pts / b.g - a.own.pts / a.g).map(a => {
+    const o = a.own, p1 = o.p1m, p2 = 2 * o.p2m, ft = o.ftm, tot = p1 + p2 + ft || 1;
+    return `<tr class="${sel(a.t) ? 'sel' : ''}"><td>${tf(a.t)}</td><td>${a.g}</td><td><b>${f1(o.pts / a.g)}</b></td>
+      <td class="sep">${o.p1m}-${o.p1a}</td><td>${pct(div(o.p1m, o.p1a))}</td>
+      <td class="sep">${o.p2m}-${o.p2a}</td><td>${pct(div(o.p2m, o.p2a))}</td>
+      <td class="sep">${o.ftm}-${o.fta}</td><td>${pct(div(o.ftm, o.fta))}</td>
+      <td class="sep">${pct(div(o.p2a, o.p1a + o.p2a))}</td>
+      <td style="text-align:left"><div class="mix" title="1PT ${Math.round(100*p1/tot)}% · 2PT ${Math.round(100*p2/tot)}% · FT ${Math.round(100*ft/tot)}%"><span style="width:${100*p1/tot}%;background:var(--c-1pt)"></span><span style="width:${100*p2/tot}%;background:var(--c-2pt)"></span><span style="width:${100*ft/tot}%;background:var(--c-ft)"></span></div></td>
+      <td class="sep">${f1(o.kast / a.g)}</td><td>${f1(o.drv / a.g)}</td><td>${f1(o.hl / a.g)}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<div class="tbl-wrap"><table class="t"><thead>
+    <tr><th></th><th></th><th></th><th class="grp sep" colspan="2">1PT</th><th class="grp sep" colspan="2">2PT</th><th class="grp sep" colspan="2">Free throws</th><th class="grp sep" colspan="2">Shot mix</th><th class="grp sep" colspan="3">Per game</th></tr>
+    <tr><th>Team</th><th>G</th><th>PPG</th><th class="sep">M-A</th><th>%</th><th class="sep">M-A</th><th>%</th><th class="sep">M-A</th><th>%</th><th class="sep">2PT rate</th><th style="text-align:left">Points from</th><th class="sep">Key ast</th><th>Drives</th><th>Highlights</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <div class="legend"><i style="background:var(--c-1pt)"></i> 1PT <i style="background:var(--c-2pt)"></i> 2PT <i style="background:var(--c-ft)"></i> Free throws &nbsp;·&nbsp; 2PT rate = share of shots taken from outside the arc. Main-draw games only.</div>`;
+}
+
+// ── awards ──────────────────────────────────────────────
+const shotPct = p => div(p.p1m + p.p2m, p.p1a + p.p2a);
+const AWARDS = [
+  ['mvp', '👑', 'MVP', 'Highest player value', p => p.pv, x => `${f1(x)} PV`],
+  ['heater', '🔥', 'Heater', 'Most points', p => p.pts, x => `${x} PTS`],
+  ['rainmaker', '🌧️', 'Rainmaker', 'Most 2-pointers made', p => p.p2m, x => `${x} 2PM`],
+  ['facilitator', '🎯', 'Facilitator', 'Most key assists', p => p.kast, x => `${x} KAST`],
+  ['glass', '🧽', 'Glass Cleaner', 'Most rebounds', p => p.reb, x => `${x} REB`],
+  ['sparkplug', '⚡', 'Sparkplug', 'Most drives', p => p.drv, x => `${x} DRV`],
+  ['speed', '🎬', 'Highlight Reel', 'Most highlights', p => p.hl, x => `${x} HL`],
+  ['stopper', '🧱', 'Stopper', 'Most blocks', p => p.blk, x => `${x} BLK`],
+  ['surgical', '🩺', 'Surgical', 'Best shooting, 6+ shots', p => (p.p1a + p.p2a >= 6 ? shotPct(p) : NaN), x => `${pct(x)}%`],
+  ['icecold', '🥶', 'Ice Cold', 'Worst shooting, 6+ shots', p => (p.p1a + p.p2a >= 6 ? -shotPct(p) : NaN), x => `${pct(-x)}%`],
+  ['hotpotato', '🥔', 'Hot Potato', 'Most turnovers', p => p.tov, x => `${x} TOV`],
+];
+function awards() {
+  const el = document.getElementById('awards'), gs = fullGames();
+  document.getElementById('awards-lede').textContent = S.day === 'all'
+    ? 'The best single-game performance of the tournament in each category. Pick a day above to narrow it down.'
+    : `The best single-game performance in each category on ${dlabel(S.day)}.`;
+  if (!gs.length) { el.innerHTML = NO_FULL; return; }
+  const lines = gs.flatMap(g => g.players.map(p => ({ ...p, opp: p.t === g.h ? g.a : g.h, date: g.date })));
+  el.innerHTML = `<div class="awards-grid">${AWARDS.map(([cls, emoji, name, desc, val, fmt]) => {
+    const best = lines.map(p => ({ p, v: val(p) })).filter(x => isFinite(x.v))
+      .sort((a, b) => b.v - a.v || (b.p.pv || 0) - (a.p.pv || 0))[0];
+    if (!best || (best.v <= 0 && cls !== 'icecold')) return '';
+    const p = best.p;
+    return `<div class="award-tile award-${cls}"><div class="award-top"><div class="award-ring">${emoji}</div><div><div class="award-name">${name}</div><div class="award-desc">${desc}</div></div></div>
+      <div class="award-player">${esc(p.n)}</div>
+      <div class="award-sub"><span>${tf(p.t)} vs ${p.opp} · ${dlabel(p.date)}</span><span class="award-pill">${fmt(best.v)}</span></div></div>`;
+  }).join('')}</div><p class="note">Player value is FIBA 3x3's own all-in-one rating. Main-draw games only.</p>`;
+}
+
+// ── player stats ────────────────────────────────────────
+const PCOLS = [
+  ['pts','PTS'], ['pv','PV'], ['p1','1PT M-A'], ['p1p','1P%'], ['p2','2PT M-A'], ['p2p','2P%'], ['ft','FT M-A'],
+  ['kast','KAST'], ['drv','DRV'], ['hl','HL'], ['reb','REB'], ['oreb','OREB'], ['tov','TOV'], ['blk','BLK'],
+];
+function players() {
+  const el = document.getElementById('players'), gs = fullGames();
+  if (!gs.length) { el.innerHTML = NO_FULL; return; }
+  const P = {};
+  for (const g of gs) for (const p of g.players) {
+    if (S.team !== 'all' && p.t !== S.team) continue;
+    const r = P[p.id] || (P[p.id] = { n: p.n, t: p.t, j: p.j, g: 0 });
+    r.g++; for (const k of ['pts','pv','p1m','p1a','p2m','p2a','ftm','fta','kast','drv','hl','reb','oreb','tov','blk']) r[k] = (r[k] || 0) + (p[k] || 0);
+  }
+  const pg = S.pl === 'pg', per = (r, k) => pg ? r[k] / r.g : r[k];
+  const sortVal = r => ({ p1: per(r, 'p1m'), p1p: div(r.p1m, r.p1a), p2: per(r, 'p2m'), p2p: div(r.p2m, r.p2a), ft: per(r, 'ftm') }[S.sort] ?? per(r, S.sort));
+  const rows = Object.values(P).sort((a, b) => ((S.desc ? -1 : 1) * ((sortVal(a) || 0) - (sortVal(b) || 0))) || b.pts - a.pts);
+  const num = (r, k) => pg ? f1(r[k] / r.g) : r[k];
+  const ma = (r, m, a) => pg ? `${f1(r[m] / r.g)}-${f1(r[a] / r.g)}` : `${r[m]}-${r[a]}`;
+  const cell = (r, k) => ({ pv: pg ? f1(r.pv / r.g) : f1(r.pv), p1: ma(r, 'p1m', 'p1a'), p1p: pct(div(r.p1m, r.p1a)), p2: ma(r, 'p2m', 'p2a'), p2p: pct(div(r.p2m, r.p2a)), ft: ma(r, 'ftm', 'fta') }[k] ?? num(r, k));
+  el.innerHTML = `<div class="tbl-wrap"><table class="t" id="ptbl"><thead><tr><th>Player</th><th>Team</th><th>G</th>
+    ${PCOLS.map(([k, l]) => `<th class="sort ${S.sort === k ? 'sorted' : ''}" data-k="${k}">${l}${S.sort === k ? (S.desc ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead>
+    <tbody>${(S.plAll ? rows : rows.slice(0, PLAYER_ROWS)).map(r => `<tr class="${sel(r.t) && S.team === 'all' ? 'sel' : ''}"><td><b>${esc(r.n)}</b>${r.j ? ` <span style="color:var(--muted)">#${esc(r.j)}</span>` : ''}</td><td>${tf(r.t)}</td><td>${r.g}</td>
+      ${PCOLS.map(([k]) => `<td${S.sort === k ? ' style="font-weight:800"' : ''}>${cell(r, k)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    ${rows.length > PLAYER_ROWS ? `<button class="more" id="pl-more">${S.plAll ? 'Show top ' + PLAYER_ROWS : 'Show all ' + rows.length + ' players'}</button>` : ''}
+    <p class="note">${pg ? 'Per game' : 'Totals'} over main-draw games${S.day === 'all' ? '' : ' on ' + dlabel(S.day)}${S.team === 'all' ? '' : ' for ' + esc(T(S.team).name)}. Click a column to sort.
+      PV = player value (FIBA 3x3) · KAST = key assists · DRV = drives · HL = highlights.</p>`;
+  const more = document.getElementById('pl-more');
+  if (more) more.onclick = () => { S.plAll = !S.plAll; players(); };
+  document.querySelectorAll('#ptbl th.sort').forEach(th => th.onclick = () => {
+    const k = th.dataset.k; S.desc = S.sort === k ? !S.desc : true; S.sort = k; players();
+  });
+}
+
+// ── standings ───────────────────────────────────────────
+function standings() {
+  const el = document.getElementById('standings'), G = D.games;
+  const rec = {};
+  for (const g of G) for (const [me, op, ms, os] of [[g.h, g.a, g.hs, g.as], [g.a, g.h, g.as, g.hs]]) {
+    const r = rec[me] || (rec[me] = { w: 0, l: 0, pf: 0, pa: 0, last: null });
+    ms > os ? r.w++ : r.l++; r.pf += ms; r.pa += os; r.last = { g, won: ms > os };
+  }
+  const stage = c => {
+    const r = rec[c]; if (!r) return '';
+    const { g, won } = r.last;
+    return { F: won ? 'Champion' : 'Runner-up', '3P': won ? 'Third place' : 'Fourth place', MSF: won ? 'Third place' : 'Fourth place', SF: 'Semi-finalist',
+             L8: 'Quarter-finalist', L16: 'Round of 16', RR: 'Pool stage', QD: 'Qualifying Draw' }[g.round] || g.group;
+  };
+  const final = D.standings.slice().sort((a, b) => a.rank - b.rank).map(s => {
+    const r = rec[s.t] || { w: 0, l: 0, pf: 0, pa: 0 }, d = r.pf - r.pa;
+    return `<div class="qual-row ${s.rank <= 3 ? 'medal' : ''} ${sel(s.t) ? 'sel' : ''}">
+      <div class="qual-rank">${s.rank}</div>
+      <div class="qual-team">${flag(s.t)}${s.t} <small>${esc(T(s.t).name)}</small></div>
+      <div class="qual-rec">${r.w}-${r.l}</div>
+      <div class="qual-diff ${d >= 0 ? 'pos' : 'neg'}">${d > 0 ? '+' : ''}${d}</div>
+      <div class="qual-badge">${stage(s.t)}</div></div>`;
+  }).join('');
+  const groups = [...new Set(G.filter(g => g.round === 'RR' || g.round === 'QD').map(g => g.group))].sort((a, b) => (a.startsWith('Pool') ? 0 : 1) - (b.startsWith('Pool') ? 0 : 1) || a.localeCompare(b));
+  const gtables = groups.map(name => {
+    const R = {};
+    for (const g of G.filter(x => x.group === name)) for (const [me, ms, os] of [[g.h, g.hs, g.as], [g.a, g.as, g.hs]]) {
+      const r = R[me] || (R[me] = { t: me, w: 0, l: 0, pf: 0, pa: 0 }); ms > os ? r.w++ : r.l++; r.pf += ms; r.pa += os;
+    }
+    const rows = Object.values(R).sort((a, b) => b.w - a.w || b.pf - a.pf);
+    return `<div class="group-card ${name.startsWith('Qual') ? 'qd' : ''}"><h4>${esc(name)}</h4><table class="t"><thead><tr><th>Team</th><th>W</th><th>L</th><th>PF</th><th>PA</th><th>+/-</th></tr></thead><tbody>
+      ${rows.map(r => `<tr class="${sel(r.t) ? 'sel' : ''}"><td>${tf(r.t)}</td><td>${r.w}</td><td>${r.l}</td><td>${r.pf}</td><td>${r.pa}</td><td class="${r.pf - r.pa >= 0 ? 'pos' : 'neg'}">${r.pf - r.pa > 0 ? '+' : ''}${r.pf - r.pa}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  }).join('');
+  el.innerHTML = `<div class="stand-wrap"><div><div class="sub-h">Final placement</div><div class="qual-grid">${final}</div>
+      <p class="note">FIBA's final ranking. Records and point differential cover every game, Qualifying Draw included.</p></div>
+    <div><div class="sub-h">Pools and Qualifying Draw</div><div class="group-grid">${gtables}</div>
+      <p class="note">Ordered by wins, then points scored (3x3's first tiebreakers after head-to-head).</p></div></div>`;
+}
+
+// ── scores ──────────────────────────────────────────────
+function scores() {
+  const el = document.getElementById('scores');
+  const gs = games().filter(g => S.team === 'all' || g.h === S.team || g.a === S.team);
+  if (!gs.length) { el.innerHTML = `<div class="empty">No games for this selection.</div>`; return; }
+  const byDay = {}; gs.forEach(g => (byDay[g.date] = byDay[g.date] || []).push(g));
+  const line = (g, c) => {
+    const t = g.teams[c];
+    if (!g.full) return `<tr><td>${tf(c)}</td><td>${t.p1m}</td><td>${t.p2m}</td><td>${t.ftm}</td><td colspan="5" style="color:var(--muted2)">–</td></tr>`;
+    return `<tr><td>${tf(c)}</td><td>${t.p1m}/${t.p1a}</td><td>${t.p2m}/${t.p2a}</td><td>${t.ftm}/${t.fta}</td><td>${(t.pts / t.poss).toFixed(2)}</td><td>${t.reb}</td><td>${t.kast}</td><td>${t.drv}</td><td>${t.tov}</td></tr>`;
+  };
+  const top = (g, c) => { const p = g.players.filter(x => x.t === c).sort((a, b) => b.pts - a.pts)[0]; return p ? `<span>${c}: <b>${esc(p.n)}</b> ${p.pts}</span>` : ''; };
+  const day = S.day !== 'all';
+  el.innerHTML = Object.entries(byDay).map(([d, list]) => `<div class="day-h">${dlabel(d)}</div><div class="games-grid${day ? ' days' : ''}">${list.map(g => {
+    const hw = g.hs > g.as;
+    return `<div class="game-card ${S.team !== 'all' ? 'sel' : ''}">
+      <div class="game-header"><span class="game-round">${esc(g.name)} · ${g.time}</span><a class="game-boxlink" href="${D.event.site}/games/${g.id}" target="_blank" rel="noopener">Box score ↗</a></div>
+      <div class="game-body${day ? ' with-mom' : ''}"><div>
+        <div class="scoreline">
+          <div class="team-block"><div class="team-code ${hw ? '' : 'dim'}">${flag(g.h)}${g.h}</div><div class="team-name-small">${esc(T(g.h).name)}</div></div>
+          <div><div class="score-nums"><span class="${hw ? '' : 'lose'}">${g.hs}</span><span class="lose"> – </span><span class="${hw ? 'lose' : ''}">${g.as}</span></div>
+            <div class="score-note">${g.ot ? 'Overtime' : g.forfeit ? 'Forfeit' : (Math.max(g.hs, g.as) >= 21 ? 'Won by reaching 21' : 'Time expired')}</div></div>
+          <div class="team-block"><div class="team-code ${hw ? 'dim' : ''}">${flag(g.a)}${g.a}</div><div class="team-name-small">${esc(T(g.a).name)}</div></div>
+        </div>
+        <div class="tbl-wrap"><table class="t"><thead><tr><th>Team</th><th>1PT</th><th>2PT</th><th>FT</th><th>PPP</th><th>REB</th><th>KAST</th><th>DRV</th><th>TOV</th></tr></thead>
+          <tbody>${line(g, g.h)}${line(g, g.a)}</tbody></table></div>
+        ${g.full ? '' : '<p class="note">Qualifying Draw: makes only, no attempts or other stats.</p>'}
+        <div class="top-line">${top(g, g.h)}${top(g, g.a)}</div></div>
+        ${day ? leadSvg(g) : ''}
+      </div></div>`;
+  }).join('')}</div>`).join('');
+  initLeadHover(el);
+}
+
+// ── lead tracker ────────────────────────────────────────
+// The score margin through the game, one bar per 15 seconds, as on FIBA's own
+// game pages: the home team above the line, the away team below, each bar in
+// the leading team's colour. 3x3 overtime has no clock (first to 2 points),
+// so it gets one extra bar after 10:00. A game won by reaching 21 stops early.
+const LEAD_STEP = 15;
+const LEAD = {};
+function hexRgb(hex) { const n = parseInt(String(hex).replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+// Two teams in near-identical colours would be unreadable, so the away team
+// steps down to slate (as on the 5x5 page).
+function leadColors(h, a) {
+  const x = hexRgb(T(h).color), y = hexRgb(T(a).color);
+  return [T(h).color, Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]) < 90 ? '#64748b' : T(a).color];
+}
+function leadSeries(g) {
+  const acts = g.mom || [];
+  if (!acts.length) return null;
+  const bars = [], s = [0, 0];
+  let i = 0;
+  const last = acts[acts.length - 1][0];
+  const reg = Math.min(last, 600);
+  for (let t = LEAD_STEP; t - LEAD_STEP < reg; t += LEAD_STEP) {
+    while (i < acts.length && acts[i][0] <= Math.min(t, 600)) { s[acts[i][1]] += acts[i][2]; i++; }
+    bars.push({ t: Math.min(t, 600), s: [s[0], s[1]] });
+  }
+  if (g.ot) {
+    while (i < acts.length) { s[acts[i][1]] += acts[i][2]; i++; }
+    bars.push({ t: 'OT', s: [s[0], s[1]] });
+  }
+  return bars;
+}
+const clock = t => { if (t === 'OT') return 'OT'; const left = Math.round(600 - t); return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; };
+function leadSvg(g) {
+  const bars = leadSeries(g);
+  if (!bars) return `<div class="mom-none">${g.full ? 'FIBA has no play-by-play for this game.' : 'No play-by-play for this game.'}</div>`;
+  LEAD[g.id] = bars;
+  const [cH, cA] = leadColors(g.h, g.a);
+  const n = 600 / LEAD_STEP + (g.ot ? 1 : 0);
+  const W = 720, H = 300, L = 46, R = 40, Tp = 28, B = 26, mid = Tp + (H - Tp - B) / 2, half = (H - Tp - B) / 2;
+  const peak = Math.max(...bars.map(b => Math.abs(b.s[0] - b.s[1])), 1);
+  const step = Math.max(2, Math.ceil(peak / 2)), top = 2 * step;   // two bands each side, like FIBA's
+  const bw = (W - L - R) / n, Y = d => mid - d / top * half;
+  const minute = k => L + k * 120 / LEAD_STEP * bw;
+  const iso = c => T(c).flag ? `https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/${T(c).flag}.svg` : '';
+  const flagImg = (c, y) => iso(c) ? `<image href="${iso(c)}" x="4" y="${y}" width="28" height="21" preserveAspectRatio="xMidYMid slice"></image>` : `<text class="mom-side" x="4" y="${y + 14}">${c}</text>`;
+  return `<div class="mom">
+    <div class="mom-legend">
+      <span><i style="background:${cH}"></i>${esc(T(g.h).name)} lead</span>
+      <span><i style="background:${cA}"></i>${esc(T(g.a).name)} lead</span>
+      <span class="mom-read" id="momRead-${g.id}"></span>
+    </div>
+    <svg class="mom-svg" viewBox="0 0 ${W} ${H}" role="img" data-game="${g.id}"
+         aria-label="Lead tracker: above the line ${esc(T(g.h).name)} leads, below it ${esc(T(g.a).name)}">
+      <rect class="lead-band" x="${L}" y="${Y(top)}" width="${W - L - R}" height="${half / 2}"></rect>
+      <rect class="lead-band2" x="${L}" y="${Y(step)}" width="${W - L - R}" height="${half}"></rect>
+      <rect class="lead-band" x="${L}" y="${Y(-step)}" width="${W - L - R}" height="${half / 2}"></rect>
+      ${[0, 1, 2, 3, 4, 5].map(k => `<line class="lead-v" x1="${minute(k)}" x2="${minute(k)}" y1="${Tp - 6}" y2="${H - B + 6}"></line>`).join('')}
+      ${[0, 1, 2, 3, 4].map(k => `<text class="mom-ql lead-top" x="${(minute(k) + minute(k + 1)) / 2}" y="${Tp - 12}">${10 - 2 * k}:00–${8 - 2 * k}:00</text>`).join('')}
+      ${g.ot ? `<text class="mom-ql lead-top" x="${minute(5) + bw / 2}" y="${Tp - 12}">OT</text>` : ''}
+      ${[top, step, 0, -step, -top].map(v => `<text class="lead-y" x="${W - R + 8}" y="${Y(v) + 4}">${Math.abs(v)}</text>`).join('')}
+      ${bars.map((b, k) => { const d = b.s[0] - b.s[1]; if (!d) return '';
+        return `<rect x="${(L + k * bw + 1).toFixed(1)}" y="${Math.min(Y(d), mid).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${Math.abs(Y(d) - mid).toFixed(1)}" fill="${d > 0 ? cH : cA}"></rect>`; }).join('')}
+      <line class="mom-zero" x1="${L}" x2="${W - R}" y1="${mid}" y2="${mid}"></line>
+      ${flagImg(g.h, Tp - 4)}${flagImg(g.a, H - B - 17)}
+      <rect class="mom-cursor-bar" x="0" y="${Tp}" width="${bw}" height="${H - Tp - B}" style="display:none"></rect>
+      <rect class="mom-hit" x="${L}" y="${Tp}" width="${W - L - R}" height="${H - Tp - B}"></rect>
+    </svg>
+  </div>`;
+}
+// Hover reads the clock and the score at the end of that bar.
+function initLeadHover(root) {
+  root.querySelectorAll('.mom-svg').forEach(svg => {
+    const id = svg.dataset.game, bars = LEAD[id], g = D.games.find(x => x.id === id);
+    const cur = svg.querySelector('.mom-cursor-bar'), out = document.getElementById('momRead-' + id);
+    if (!bars || !g) return;
+    const vb = svg.viewBox.baseVal, L = 46, R = 40, n = 600 / LEAD_STEP + (g.ot ? 1 : 0), bw = (vb.width - L - R) / n;
+    const show = ev => {
+      const box = svg.getBoundingClientRect(), x = (ev.clientX - box.left) / box.width * vb.width;
+      const k = Math.floor((x - L) / bw);
+      if (k < 0 || k >= bars.length) { cur.style.display = 'none'; out.textContent = ''; return; }
+      const b = bars[k], d = b.s[0] - b.s[1];
+      cur.setAttribute('x', L + k * bw); cur.style.display = '';
+      out.textContent = `${clock(b.t)} · ${g.h} ${b.s[0]}–${b.s[1]} ${g.a}` + (d ? ` · ${d > 0 ? g.h : g.a} by ${Math.abs(d)}` : ' · tied');
+    };
+    svg.addEventListener('pointermove', show);
+    svg.addEventListener('pointerleave', () => { cur.style.display = 'none'; out.textContent = ''; });
+  });
+}
+
+const STAGE_DAY = { QD: 'Qualifying', RR: 'Pools', L16: 'Round of 16', L8: 'Quarter-finals', SF: 'Semi-finals', MSF: 'Medal games', '3P': 'Medal games', F: 'Medal games' };
+
+// Four Factors and Standings are tournament-long, so they show on Total
+// Results only; a day shows its games with a lead tracker under each box score.
+function render() {
+  const total = S.day === 'all';
+  document.querySelectorAll('.date-tab').forEach(b => b.classList.toggle('active', b.dataset.d === S.day));
+  for (const id of ['section-factors', 'section-standings']) {
+    document.getElementById(id).hidden = !total;
+    document.querySelector(`.section-nav-item[href="#${id}"]`).hidden = !total;
+  }
+  document.querySelector('.section-nav-item[href="#section-scores"]').textContent = total ? 'Scores' : 'Scores & Lead Tracker';
+  document.getElementById('scores-title').textContent = total ? 'Scores' : 'Scores & Lead Tracker';
+  document.getElementById('scores-lede').hidden = total;
+  kpis(); if (total) { factors(); standings(); } efficiency(); shooting(); awards(); players(); scores();
+}
+header(); render();
+</script>
+</body>
+</html>
