@@ -123,8 +123,9 @@
   /* FOUR FACTORS: table on the left, the possessions chart beside it (as on 5x5) */
   /* Four factors, as on 5x5: the table on the left, the possessions chart beside it. */
   .ff-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); gap: 24px; align-items: start; margin-top: 16px; }
-  @media (max-width: 1200px) { .ff-layout { grid-template-columns: 1fr; } }
-  .ff-scroll { overflow-x: auto; }
+  @media (max-width: 1200px) { .ff-layout { grid-template-columns: minmax(0, 1fr); } }
+  .ff-layout > *, .chart-wrap > *, .stand-wrap > *, .games-grid > * { min-width: 0; }
+  .ff-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .ff-tbl { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 13px; }
   .ff-tbl th { font-size: 9.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
                background: var(--surface2); padding: 10px 7px; text-align: right; border-bottom: 2px solid var(--border2); white-space: nowrap; }
@@ -160,7 +161,7 @@
 
   /* EFFICIENCY QUADRANT */
   .chart-wrap { display: grid; grid-template-columns: 1fr 270px; gap: 18px; align-items: start; }
-  @media (max-width: 900px) { .chart-wrap { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .chart-wrap { grid-template-columns: minmax(0, 1fr); } }
   .quad { position: relative; border: 1px solid var(--border); border-radius: 12px; padding: 30px 34px 46px 74px; }
   .quad-plot { position: relative; width: 100%; aspect-ratio: 16/10; }
   .quad-fill { position: absolute; pointer-events: none; }
@@ -187,7 +188,7 @@
   .mix span { display: block; height: 100%; }
 
   /* AWARDS (colours from the 5x5 dashboard) */
-  .awards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .awards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(210px, 100%), 1fr)); gap: 10px; }
   .award-tile { background: linear-gradient(142deg, var(--c-fill) 0%, var(--surface) 62%); border: 1px solid var(--border);
                 border-radius: 10px; padding: 12px 14px; position: relative; overflow: hidden; }
   .award-tile::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--c-mid); }
@@ -213,7 +214,7 @@
 
   /* STANDINGS */
   .stand-wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
-  @media (max-width: 980px) { .stand-wrap { grid-template-columns: 1fr; } }
+  @media (max-width: 980px) { .stand-wrap { grid-template-columns: minmax(0, 1fr); } }
   .qual-grid { display: flex; flex-direction: column; gap: 6px; }
   .qual-row { display: grid; grid-template-columns: 34px 1fr auto auto auto; align-items: center; gap: 12px;
               border: 1px solid var(--border); border-radius: 12px; padding: 9px 14px; }
@@ -229,7 +230,7 @@
                 min-width: 96px; text-align: center; background: var(--chip); color: var(--muted); border: 1px solid var(--border); }
   .qual-row.medal .qual-badge { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
   .group-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-  @media (max-width: 560px) { .group-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .group-grid { grid-template-columns: minmax(0, 1fr); } }
   .group-card { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
   .group-card h4 { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
   .group-card.qd h4 { color: var(--fiba3x3); }
@@ -240,10 +241,10 @@
   .day-h::after { content: ""; flex: 1; height: 1px; background: var(--border2); }
   .day-h:first-child { margin-top: 0; }
   [hidden] { display: none !important; }
-  .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; }
+  .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr)); gap: 12px; }
   /* A day's games: two across, box score on top, lead tracker under it. */
-  .games-grid.days { grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 16px; }
-  @media (max-width: 1100px) { .games-grid.days { grid-template-columns: 1fr; } }
+  .games-grid.days { grid-template-columns: repeat(auto-fill, minmax(min(520px, 100%), 1fr)); gap: 16px; }
+  @media (max-width: 1100px) { .games-grid.days { grid-template-columns: minmax(0, 1fr); } }
   .game-body.with-mom .mom { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
   /* Momentum, as on the 5x5 page. */
   .mom-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 11.5px; color: var(--text2); margin-bottom: 2px; }
@@ -264,7 +265,7 @@
   .lead-top { font-weight: 700; font-size: 10.5px; }
   .mom-cursor-bar { fill: var(--text); opacity: .08; pointer-events: none; }
   .mom-none { font-size: 12px; color: var(--muted); padding: 30px 0; text-align: center; }
-  @media (max-width: 420px) { .games-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 420px) { .games-grid { grid-template-columns: minmax(0, 1fr); } }
   .game-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
   .game-card:hover { border-color: var(--border2); box-shadow: 0 6px 18px -12px rgba(16,24,40,.28); }
   .game-card.sel { border-color: var(--accent); }
